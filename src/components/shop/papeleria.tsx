@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Search, Tags, ShoppingBasket, ScanBarcode, X, Plus, ReceiptText } from "lucide-react";
 import { formatMoney, norm, parseMoney } from "@/lib/shop/format";
 import { useShop, type Good, type GoodCategory, type SaleLine } from "@/lib/shop/store";
 import { Field, Frame, Primary, Quiet } from "./ui";
@@ -27,6 +28,18 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
   const [category, setCategory] = useState("Frecuentes");
   const [pricingId, setPricingId] = useState<string | null>(null);
   const [pendingPrice, setPendingPrice] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    function shortcuts(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      }
+    }
+    window.addEventListener("keydown", shortcuts);
+    return () => window.removeEventListener("keydown", shortcuts);
+  }, []);
 
   // Start with a compact counter view; frequently sold custom items join it over time.
   const defaultFrequent = new Set([
@@ -128,26 +141,38 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
       onBack={onBack}
       action={
         <Primary tone="stamp" onClick={save}>
-          Cobrar papelería
+          Guardar venta
         </Primary>
       }
     >
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div>
-          <p className="text-sm font-medium text-muted">Caja</p>
-          <h1 className="mt-1 font-display text-4xl leading-none tracking-tight sm:text-5xl">Venta rápida</h1>
-          <p className="mt-3 max-w-xl text-lg text-muted">
-            Papelería, copias y servicios de mostrador. Busque, agregue a la cuenta y cobre.
+          <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-blue-50 text-stamp">
+            <ShoppingBasket size={26}/>
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Nueva venta</h1>
+          <p className="mt-2 max-w-xl text-base text-muted">
+            Elija los artículos. La cuenta se calcula automáticamente.
           </p>
-          <div className="mt-5 flex flex-col gap-3">
+          <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
             <label className="block">
-              <span className="mb-2 block text-base font-medium text-muted">Buscar artículo o servicio</span>
-              <input
-                value={query}
-                onChange={(event) => { setQuery(event.target.value); setCategory("Todos"); }}
-                placeholder="Pluma, cartulina, copias..."
-                className="w-full rounded-2xl border border-line bg-card px-4 py-3 text-lg"
-              />
+              <span className="mb-2 block text-base font-bold text-ink">Buscar producto o servicio</span>
+              <div className="relative">
+                <Search size={21} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted"/>
+                <input
+                  ref={searchRef}
+                  value={query}
+                  onChange={(event) => { setQuery(event.target.value); setCategory("Todos"); }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") { setQuery(""); setCategory("Frecuentes"); }
+                    if (event.key === "Enter" && visible.length === 1) { event.preventDefault(); pick(visible[0]); }
+                  }}
+                  placeholder="Pluma, cartulina, copias..."
+                  aria-label="Buscar un producto"
+                  className="w-full min-h-14 rounded-xl border border-line bg-paper py-3 pl-12 pr-4 text-lg"
+                />
+              </div>
+              <span className="mt-2 hidden text-xs text-muted sm:block">Atajo: Ctrl + K para buscar · Enter si hay un solo resultado</span>
             </label>
             <div className="flex flex-wrap gap-2">
               {["Frecuentes", "Todos", ...CATEGORIES].map((item) => (
@@ -171,7 +196,8 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
               + Agregar «{query.trim()}» al catálogo
             </button>
           ) : null}
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="mt-4 flex items-center justify-between gap-2"><h2 className="text-lg font-extrabold">Artículos</h2><span className="text-sm text-muted">{visible.length} opciones</span></div>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
             {visible.map((good) => {
               const qty = lines.find((line) => line.goodId === good.id)?.qty ?? 0;
               return (
@@ -179,13 +205,13 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
                   key={good.id}
                   type="button"
                   onClick={() => pick(good)}
-                  className={`min-h-28 rounded-3xl border p-4 text-left ${qty > 0 ? "border-ink bg-ink text-band-fg" : "border-line bg-card"}`}
+                  className={`min-h-28 rounded-2xl border-2 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${qty > 0 ? "border-stamp bg-blue-50 text-ink" : "border-line bg-card hover:border-stamp/60"}`}
                 >
                   <span className="block text-lg font-medium leading-tight">{good.name}</span>
-                  <span className={`mt-2 block tabular-nums ${qty > 0 ? "text-band-fg/70" : "text-muted"}`}>
+                  <span className={`mt-2 block tabular-nums ${qty > 0 ? "text-stamp" : "text-muted"}`}>
                     {good.price > 0 ? formatMoney(good.price) : "Asignar precio"}
                   </span>
-                  {qty > 0 ? <span className="mt-3 block text-sm">Lleva {qty}</span> : null}
+                  {qty > 0 ? <span className="mt-3 inline-block rounded-lg bg-stamp px-2 py-1 text-sm font-semibold text-white">En cuenta: {qty}</span> : null}
                 </button>
               );
             })}
@@ -216,7 +242,8 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
               </div>
             </div>
           ) : null}
-          <button type="button" onClick={() => setPrices((open) => !open)} className="mt-5 min-h-11 text-base font-medium text-ink underline underline-offset-4">
+          <button type="button" onClick={() => setPrices((open) => !open)} className="mt-5 inline-flex min-h-12 items-center rounded-xl border border-line bg-card px-4 text-base font-semibold text-stamp shadow-sm transition hover:bg-blue-50">
+            <Tags size={19} className="mr-2" />
             {prices ? "Cerrar catálogo" : "Agregar productos o editar precios"}
           </button>
           {prices ? (
@@ -270,8 +297,8 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
           ) : null}
         </div>
 
-        <aside className="rounded-3xl bg-ink p-5 text-band-fg lg:sticky lg:top-6">
-          <p className="text-sm text-band-fg/60">Cuenta</p>
+        <aside className="rounded-2xl bg-ink p-5 text-band-fg shadow-xl lg:sticky lg:top-6">
+          <div className="flex items-center gap-2"><ReceiptText size={22}/><p className="text-lg font-bold">Cuenta actual</p></div>
           {lines.length === 0 ? <p className="mt-4 text-lg text-band-fg/70">Todavía no elige nada.</p> : null}
           <ul className="mt-3 flex flex-col gap-3">
             {lines.map((line) => (
@@ -292,7 +319,7 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
               </li>
             ))}
           </ul>
-          <p className="mt-5 font-display text-5xl leading-none tabular-nums">{formatMoney(total)}</p>
+          <p className="mt-6 text-5xl font-extrabold leading-none tabular-nums">{formatMoney(total)}</p>
           <label className="mt-5 block">
             <span className="mb-2 block text-sm text-band-fg/60">Pagó</span>
             <input
@@ -338,7 +365,7 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
           ) : null}
           {error ? <p className="mt-3 text-base text-stamp-fg">{error}</p> : null}
           <button type="button" onClick={save} className="mt-5 min-h-14 w-full rounded-2xl bg-stamp text-lg font-medium text-stamp-fg">
-            {left > 0 ? "Anotar y dejar saldo" : "Cobrar y listo"}
+            {left > 0 ? "Guardar con saldo" : "Guardar venta"}
           </button>
         </aside>
       </div>
