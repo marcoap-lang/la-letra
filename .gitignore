@@ -1,0 +1,13 @@
+node_modules
+dist
+.output
+.nitro
+.vercel
+.env
+.env.*
+*.log
+.DS_Store
+screenshots
+.grok
+
+.project_id

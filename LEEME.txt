@@ -1,0 +1,17 @@
+Imprenta La Letra — Tuxtepec
+
+Esta carpeta es el proyecto del mostrador (código, sin datos de clientes).
+
+Para bajarlo como un solo zip:
+1. Abre esta carpeta en Google Drive.
+2. Clic derecho sobre la carpeta «la letra» (no sobre un archivo).
+3. Descargar.
+Drive arma el zip.
+
+En una computadora, después de descomprimir:
+  npm install
+  npm run dev
+
+No incluye node_modules ni package-lock. Los trabajos, clientes y cobros no van aquí: se quedan en el navegador del mostrador.
+
+GitHub (marcoap-lang/la-letra) sigue vacío. La conexión no tiene permiso para escribir. Puedes dejar ese repositorio en privado.

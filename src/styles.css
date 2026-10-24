@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #f3f1ec;
+  --color-card: #ffffff;
+  --color-ink: #171614;
+  --color-muted: #6a645c;
+  --color-line: #e4dfd6;
+  --color-stamp: #c2412d;
+  --color-stamp-fg: #fff8f5;
+  --color-band: #121110;
+  --color-band-fg: #f7f4ee;
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --radius-card: 1.5rem;
+  --shadow-ticket: 0 1px 2px rgb(23 22 20 / 4%), 0 12px 32px rgb(23 22 20 / 6%);
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  html,
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--color-band);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.5;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-stamp);
+    outline-offset: 3px;
+  }
+
+  input,
+  textarea {
+    font-family: inherit;
+  }
+
+  ::placeholder {
+    color: var(--color-muted);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+  }
+}
