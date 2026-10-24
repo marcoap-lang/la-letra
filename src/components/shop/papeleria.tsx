@@ -7,6 +7,7 @@ const CATEGORIES: GoodCategory[] = ["Escritura", "Papel y archivo", "Útiles", "
 
 export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: () => void }) {
   const goods = useShop((s) => s.goods);
+  const sales = useShop((s) => s.sales);
   const customers = useShop((s) => s.customers);
   const saveSale = useShop((s) => s.saveSale);
   const addGood = useShop((s) => s.addGood);
@@ -23,14 +24,28 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
   const [newPrice, setNewPrice] = useState("");
   const [newCategory, setNewCategory] = useState<GoodCategory>("Otros");
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("Todos");
+  const [category, setCategory] = useState("Frecuentes");
   const [pricingId, setPricingId] = useState<string | null>(null);
   const [pendingPrice, setPendingPrice] = useState("");
 
+  // Start with a compact counter view; frequently sold custom items join it over time.
+  const defaultFrequent = new Set([
+    "pluma", "lapiz", "folder", "resma-carta", "hoja-carta",
+    "cartulina", "cuaderno", "copia-bn", "copia-color",
+    "impresion-bn", "impresion-color", "engargolado",
+  ]);
+  const usage = new Map<string, number>();
+  for (const sale of sales) {
+    for (const line of sale.lines) {
+      usage.set(line.goodId, (usage.get(line.goodId) ?? 0) + line.qty);
+    }
+  }
+  const soldFrequently = [...usage.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([id]) => id);
+  const frequentIds = new Set([...defaultFrequent, ...soldFrequently]);
   const visible = goods.filter(
     (good) =>
       !good.hidden &&
-      (category === "Todos" || (good.category ?? "Otros") === category) &&
+      (category === "Todos" || (category === "Frecuentes" ? frequentIds.has(good.id) : (good.category ?? "Otros") === category)) &&
       (!query.trim() || norm(good.name).includes(norm(query.trim()))),
   );
   const selectedUnpriced = goods.find((good) => good.id === pricingId);
@@ -135,7 +150,7 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
               />
             </label>
             <div className="flex flex-wrap gap-2">
-              {["Todos", ...CATEGORIES].map((item) => (
+              {["Frecuentes", "Todos", ...CATEGORIES].map((item) => (
                 <button
                   type="button"
                   key={item}
