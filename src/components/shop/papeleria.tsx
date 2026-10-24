@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { formatMoney, norm, parseMoney } from "@/lib/shop/format";
-import { useShop, type SaleLine } from "@/lib/shop/store";
+import { useShop, type Good, type GoodCategory, type SaleLine } from "@/lib/shop/store";
 import { Field, Frame, Primary, Quiet } from "./ui";
+
+const CATEGORIES: GoodCategory[] = ["Escritura", "Papel y archivo", "Útiles", "Servicios rápidos", "Otros"];
 
 export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: () => void }) {
   const goods = useShop((s) => s.goods);
@@ -19,8 +21,20 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
   const [prices, setPrices] = useState(false);
   const [newName, setNewName] = useState("");
   const [newPrice, setNewPrice] = useState("");
+  const [newCategory, setNewCategory] = useState<GoodCategory>("Otros");
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("Todos");
+  const [pricingId, setPricingId] = useState<string | null>(null);
+  const [pendingPrice, setPendingPrice] = useState("");
 
-  const visible = goods.filter((good) => !good.hidden);
+  const visible = goods.filter(
+    (good) =>
+      !good.hidden &&
+      (category === "Todos" || (good.category ?? "Otros") === category) &&
+      (!query.trim() || norm(good.name).includes(norm(query.trim()))),
+  );
+  const selectedUnpriced = goods.find((good) => good.id === pricingId);
+  const exactMatch = goods.some((good) => norm(good.name) === norm(query.trim()));
   const total = useMemo(
     () => lines.reduce((sum, line) => sum + line.qty * line.price, 0),
     [lines],
@@ -38,6 +52,30 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
       if (!found) return [...current, { goodId, name: label, qty: 1, price }];
       return current.map((line) => (line.goodId === goodId ? { ...line, qty: line.qty + 1 } : line));
     });
+  }
+
+  function pick(good: Good) {
+    if (good.price <= 0) {
+      setPricingId(good.id);
+      setPendingPrice("");
+      setError("");
+      return;
+    }
+    setPricingId(null);
+    add(good.id, good.name, good.price);
+  }
+
+  function confirmPrice() {
+    if (!selectedUnpriced) return;
+    const amount = parseMoney(pendingPrice);
+    if (amount <= 0) {
+      setError("Escriba un precio mayor a cero.");
+      return;
+    }
+    setGoodPrice(selectedUnpriced.id, amount);
+    add(selectedUnpriced.id, selectedUnpriced.name, amount);
+    setPricingId(null);
+    setError("");
   }
 
   function setQty(goodId: string, qty: number) {
@@ -82,31 +120,89 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div>
           <p className="text-sm font-medium text-muted">Caja</p>
-          <h1 className="mt-1 font-display text-5xl leading-none tracking-tight">Papelería</h1>
+          <h1 className="mt-1 font-display text-4xl leading-none tracking-tight sm:text-5xl">Venta rápida</h1>
           <p className="mt-3 max-w-xl text-lg text-muted">
-            Esto no entra al taller. Toque el producto, cobre, y queda en el día.
+            Papelería, copias y servicios de mostrador. Busque, agregue a la cuenta y cobre.
           </p>
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="mt-5 flex flex-col gap-3">
+            <label className="block">
+              <span className="mb-2 block text-base font-medium text-muted">Buscar artículo o servicio</span>
+              <input
+                value={query}
+                onChange={(event) => { setQuery(event.target.value); setCategory("Todos"); }}
+                placeholder="Pluma, cartulina, copias..."
+                className="w-full rounded-2xl border border-line bg-card px-4 py-3 text-lg"
+              />
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {["Todos", ...CATEGORIES].map((item) => (
+                <button
+                  type="button"
+                  key={item}
+                  onClick={() => setCategory(item)}
+                  className={"min-h-11 rounded-full border px-4 text-base font-medium " + (category === item ? "border-ink bg-ink text-band-fg" : "border-line bg-card text-ink")}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+          {query.trim() && !exactMatch ? (
+            <button
+              type="button"
+              onClick={() => { setPrices(true); setNewName(query.trim()); setNewCategory("Otros"); }}
+              className="mt-3 min-h-12 w-full rounded-xl border border-dashed border-line bg-card px-4 text-left font-medium"
+            >
+              + Agregar «{query.trim()}» al catálogo
+            </button>
+          ) : null}
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {visible.map((good) => {
               const qty = lines.find((line) => line.goodId === good.id)?.qty ?? 0;
               return (
                 <button
                   key={good.id}
                   type="button"
-                  onClick={() => add(good.id, good.name, good.price)}
+                  onClick={() => pick(good)}
                   className={`min-h-28 rounded-3xl border p-4 text-left ${qty > 0 ? "border-ink bg-ink text-band-fg" : "border-line bg-card"}`}
                 >
                   <span className="block text-lg font-medium leading-tight">{good.name}</span>
                   <span className={`mt-2 block tabular-nums ${qty > 0 ? "text-band-fg/70" : "text-muted"}`}>
-                    {formatMoney(good.price)}
+                    {good.price > 0 ? formatMoney(good.price) : "Asignar precio"}
                   </span>
                   {qty > 0 ? <span className="mt-3 block text-sm">Lleva {qty}</span> : null}
                 </button>
               );
             })}
           </div>
-          <button type="button" onClick={() => setPrices((open) => !open)} className="mt-5 min-h-11 text-base text-muted">
-            {prices ? "Ocultar precios" : "Cambiar precios o agregar"}
+          {selectedUnpriced ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+              <div role="dialog" aria-modal="true" aria-label="Asignar precio" className="w-full max-w-md rounded-3xl bg-card p-6 shadow-2xl">
+                <h2 className="text-2xl font-semibold">{selectedUnpriced.name}</h2>
+                <p className="mt-2 text-base text-muted">¿Cuánto cuesta? Guardaremos el precio para las siguientes ventas.</p>
+                <label className="mt-5 block">
+                  <span className="mb-2 block text-base font-medium">Precio en pesos</span>
+                  <input
+                    autoFocus
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={pendingPrice}
+                    onChange={(event) => setPendingPrice(event.target.value)}
+                    onKeyDown={(event) => { if (event.key === "Enter") confirmPrice(); }}
+                    className="w-full rounded-xl border border-line bg-paper px-4 py-3 text-2xl"
+                  />
+                </label>
+                {error ? <p className="mt-3 text-base text-stamp">{error}</p> : null}
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Primary onClick={confirmPrice}>Guardar y agregar</Primary>
+                  <Quiet onClick={() => { setPricingId(null); setError(""); }}>Cancelar</Quiet>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          <button type="button" onClick={() => setPrices((open) => !open)} className="mt-5 min-h-11 text-base font-medium text-ink underline underline-offset-4">
+            {prices ? "Cerrar catálogo" : "Agregar productos o editar precios"}
           </button>
           {prices ? (
             <div className="mt-3 flex flex-col gap-3 rounded-3xl border border-line bg-card p-4">
@@ -114,23 +210,41 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
                 <label key={good.id} className="grid grid-cols-[1fr_7rem] items-center gap-3">
                   <span>{good.name}</span>
                   <input
-                    value={String(good.price)}
-                    inputMode="decimal"
-                    onChange={(event) => setGoodPrice(good.id, parseMoney(event.target.value))}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    defaultValue={good.price > 0 ? String(good.price) : ""}
+                    placeholder="Precio"
+                    onBlur={(event) => setGoodPrice(good.id, parseMoney(event.target.value))}
+                    onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
                     className="rounded-xl border border-line bg-paper px-3 py-2 text-right tabular-nums"
                   />
                 </label>
               ))}
               <div className="grid gap-3 border-t border-line pt-3 sm:grid-cols-[1fr_8rem_auto]">
-                <Field label="Producto nuevo" value={newName} onChange={setNewName} placeholder="Por ejemplo, folder oficio" />
-                <Field label="Precio" value={newPrice} inputMode="decimal" onChange={setNewPrice} />
+                <div>
+                  <Field label="Producto nuevo" value={newName} onChange={setNewName} placeholder="Por ejemplo, folder oficio" />
+                  <select
+                    value={newCategory}
+                    onChange={(event) => setNewCategory(event.target.value as GoodCategory)}
+                    aria-label="Categoría"
+                    className="mt-2 min-h-11 w-full rounded-xl border border-line bg-paper px-3"
+                  >
+                    {CATEGORIES.map((item) => <option value={item} key={item}>{item}</option>)}
+                  </select>
+                </div>
+                <Field label="Precio (puede quedar pendiente)" value={newPrice} inputMode="decimal" onChange={setNewPrice} />
                 <div className="self-end">
                   <Quiet
                     onClick={() => {
                       if (newName.trim().length < 2) return;
-                      addGood(newName, parseMoney(newPrice));
+                      const amount = parseMoney(newPrice);
+                      const id = addGood(newName, amount, newCategory);
+                      if (amount > 0) add(id, newName.trim(), amount);
                       setNewName("");
                       setNewPrice("");
+                      setQuery("");
+                      setCategory("Todos");
                     }}
                   >
                     Agregar
