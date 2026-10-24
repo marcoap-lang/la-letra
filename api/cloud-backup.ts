@@ -1,6 +1,6 @@
 import { get, list, put } from "@vercel/blob";
 import { randomUUID } from "node:crypto";
-import { isAuthorized, isSameOrigin, json } from "../src/server/cloud-auth";
+import { isAuthorized, isSameOrigin, json } from "../src/server/cloud-auth.js";
 
 export const config = { runtime: "nodejs", maxDuration: 30 };
 type Entry = { pathname: string; uploadedAt: Date | string };
