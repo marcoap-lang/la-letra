@@ -16,9 +16,9 @@ export function Tipos({ onBack }: { onBack: () => void }) {
 
   return (
     <Frame onBack={onBack}>
-      <h1 className="font-display text-5xl leading-none">Qué se hace</h1>
+      <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Servicios de imprenta</h1>
       <p className="mt-3 max-w-lg text-lg text-muted">
-        Esto es el catálogo de la orden. Oculte lo que no maneja, o agregue lo que falte.
+        Aquí puede organizar los servicios que ofrece. Agregue uno nuevo cuando lo necesite; quedará disponible en las siguientes órdenes.
       </p>
       <div className="mt-8 flex flex-col">
         {drawers.map((drawer) => {
@@ -76,7 +76,7 @@ export function Tipos({ onBack }: { onBack: () => void }) {
         })}
       </div>
       <div className="mt-6 flex flex-col gap-3 border-t border-ink pt-6">
-        <Field label="Cajón nuevo" value={drawerName} onChange={setDrawerName} placeholder="Por ejemplo, Fotografía" />
+        <Field label="Grupo nuevo" value={drawerName} onChange={setDrawerName} placeholder="Por ejemplo, Fotografía" />
         <Primary
           onClick={() => {
             if (drawerName.trim().length < 2) return;
@@ -85,7 +85,7 @@ export function Tipos({ onBack }: { onBack: () => void }) {
             setOpen(id);
           }}
         >
-          Agregar cajón
+          Agregar grupo
         </Primary>
       </div>
     </Frame>
