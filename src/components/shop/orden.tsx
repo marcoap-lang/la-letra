@@ -75,14 +75,14 @@ export function Orden({
         </Primary>
       }
     >
-      <p className="font-display text-5xl leading-none tracking-tight">Orden nueva</p>
+      <p className="text-3xl font-extrabold tracking-tight sm:text-4xl">Nuevo trabajo de imprenta</p>
       <p className="mt-3 max-w-lg text-lg text-muted">
-        Una sola hoja. Al guardar, el trabajo entra a «En el taller».
+        Capture lo que necesita el cliente. Al guardar aparecerá en trabajos pendientes.
       </p>
       {notice ? <p className="mt-4 rounded-lg bg-card px-4 py-3 text-base">{notice}</p> : null}
 
       <div className="mt-8 flex flex-col gap-8">
-        <Section n="1" title="¿Quién lo pide?" hint="Si ya vino, tóquelo en la lista.">
+        <Section n="1" title="Datos del cliente" hint="Si ya es cliente, selecciónelo de la lista.">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
               label="Nombre"
@@ -115,7 +115,7 @@ export function Orden({
           ) : null}
         </Section>
 
-        <Section n="2" title="¿Qué se va a hacer?" hint="Primero el cajón, luego el trabajo.">
+        <Section n="2" title="Servicio solicitado" hint="Elija un grupo y después el trabajo.">
           {chosen ? (
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-2xl font-medium">{chosen.name}</p>
@@ -187,7 +187,7 @@ export function Orden({
           )}
         </Section>
 
-        <Section n="3" title="¿Para cuándo y cuánto?" hint="El precio lo pone usted. Puede quedar en cero.">
+        <Section n="3" title="Fecha de entrega y cobro" hint="Puede anotar el anticipo y dejar el saldo pendiente.">
           <div>
             <p className="mb-2 text-base text-muted">Cantidad</p>
             <Stepper value={draft.quantity} onChange={(quantity) => patch({ quantity })} />
@@ -207,10 +207,10 @@ export function Orden({
             <Field label="Fecha" type="date" value={draft.dueDate} onChange={(dueDate) => patch({ dueDate })} />
           ) : null}
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Precio" value={draft.price} inputMode="decimal" placeholder="0" onChange={(price) => patch({ price })} />
-            <Field label="Dejó de abono" value={draft.paid} inputMode="decimal" placeholder="0" onChange={(paid) => patch({ paid })} />
+            <Field label="Precio total" value={draft.price} inputMode="decimal" placeholder="0" onChange={(price) => patch({ price })} />
+            <Field label="Anticipo recibido" value={draft.paid} inputMode="decimal" placeholder="0" onChange={(paid) => patch({ paid })} />
           </div>
-          <Quiet onClick={() => patch({ paid: draft.price || "0" })}>Pagó todo</Quiet>
+          <Quiet onClick={() => patch({ paid: draft.price || "0" })}>Marcar como pagado</Quiet>
           <label className="block">
             <span className="mb-2 block text-base text-muted">Nota</span>
             <textarea
@@ -241,7 +241,7 @@ export function Orden({
             onSave();
           }}
         >
-          {missing || "Guardar y mandar al taller"}
+          {missing || "Guardar trabajo"}
         </Primary>
       </div>
     </Frame>
