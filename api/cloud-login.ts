@@ -1,4 +1,4 @@
-import { isAuthorized, isSameOrigin, json, makeSessionCookie, matchesAccessCode } from "../src/server/cloud-auth";
+import { isAuthorized, isSameOrigin, json, makeSessionCookie, matchesAccessCode } from "../src/server/cloud-auth.js";
 
 export const config = { runtime: "nodejs" };
 
