@@ -4,7 +4,7 @@ import { SEED_DRAWERS, SEED_TYPES, type Drawer, type JobType } from "./catalog";
 import { digits, norm, roundMoney } from "./format";
 import { SEED_GOODS, type Good, type GoodCategory } from "./goods";
 
-export type { Drawer, JobType, Good };
+export type { Drawer, JobType, Good, GoodCategory };
 
 export type JobStatus = "nuevo" | "aprobado" | "listo" | "entregado";
 
