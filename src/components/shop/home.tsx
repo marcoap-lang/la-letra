@@ -68,7 +68,7 @@ export function Home({
   return (
     <Frame
       narrow={false}
-      action={<span className="hidden rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-stamp sm:block">Mostrador</span>}
+      action={<button type="button" onClick={() => downloadSnapshot(toSnapshot(useShop.getState()))} title="Los datos todavía se guardan en este dispositivo. Descargar copia de seguridad." className="flex min-h-11 items-center rounded-xl border border-line bg-paper px-3 text-sm font-semibold text-muted hover:bg-blue-50">Datos en este equipo · Guardar copia</button>}
     >
       <header className="mb-6">
         <div className="flex flex-wrap items-end justify-between gap-2">
