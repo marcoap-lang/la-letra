@@ -1,4 +1,5 @@
 import { Children, useRef, useState, type ReactNode } from "react";
+import { ShoppingBag, ClipboardPlus, Search, Clock3, CircleCheck, Wallet, ReceiptText, ArrowRight, Repeat2, ListPlus } from "lucide-react";
 import { balanceOf, downloadSnapshot, parseSnapshot, saleBalance, toSnapshot, useShop, type Job, type Sale } from "@/lib/shop/store";
 import { formatDay, formatMoney, norm, todayISO } from "@/lib/shop/format";
 import { Frame, Primary, Quiet } from "./ui";
@@ -67,49 +68,60 @@ export function Home({
   return (
     <Frame
       narrow={false}
-      action={
-        <div className="flex flex-col gap-2">
-          <Primary tone="stamp" onClick={onNew}>
-            Anotar trabajo
-          </Primary>
-          <button
-            type="button"
-            onClick={onSell}
-            className="min-h-14 rounded-2xl border border-band-fg/20 px-5 text-lg font-medium text-band-fg"
-          >
-            Vender papelería
-          </button>
-        </div>
-      }
+      action={<span className="hidden rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-stamp sm:block">Mostrador</span>}
     >
       <header className="mb-6">
-        <p className="text-sm font-medium text-muted">Mostrador</p>
-        <h1 className="mt-1 text-4xl font-medium tracking-tight">Dónde está cada cosa</h1>
-        <p className="mt-2 max-w-2xl text-lg text-muted">
-          Pendientes es lo que falta por hacer. Listos ya se pueden entregar. Por cobrar es el dinero. Papelería es la caja, no el taller.
-        </p>
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[.12em] text-stamp">Buen día</p>
+            <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl">¿Qué vamos a hacer?</h1>
+            <p className="mt-2 text-base text-muted">Elija una opción para comenzar.</p>
+          </div>
+          <span className="rounded-xl border border-line bg-card px-3 py-2 text-sm font-semibold text-muted">{new Date().toLocaleDateString("es-MX", {day:"numeric", month:"long", year:"numeric"})}</span>
+        </div>
+      </header>
+      <div className="mb-8 grid gap-3 md:grid-cols-2">
+        <button type="button" onClick={onSell} className="group flex min-h-36 items-center gap-4 rounded-2xl bg-stamp p-5 text-left text-white shadow-[0_10px_30px_rgba(23,105,212,.18)] transition hover:bg-blue-700 sm:p-6">
+          <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-white/20"><ShoppingBag size={34} strokeWidth={2} /></span>
+          <span className="flex-1">
+            <span className="block text-2xl font-extrabold sm:text-3xl">Nueva venta</span>
+            <span className="mt-1 block text-base text-white/90">Papelería, copias y artículos</span>
+          </span>
+          <ArrowRight className="hidden opacity-70 transition group-hover:translate-x-1 sm:block" size={25}/>
+        </button>
+        <button type="button" onClick={onNew} className="group flex min-h-36 items-center gap-4 rounded-2xl border-2 border-ink bg-card p-5 text-left shadow-ticket transition hover:bg-blue-50 sm:p-6">
+          <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-stamp"><ClipboardPlus size={34} strokeWidth={2} /></span>
+          <span className="flex-1">
+            <span className="block text-2xl font-extrabold sm:text-3xl">Nuevo trabajo</span>
+            <span className="mt-1 block text-base text-muted">Pedidos para la imprenta</span>
+          </span>
+          <ArrowRight className="hidden text-ink/50 transition group-hover:translate-x-1 sm:block" size={25}/>
+        </button>
+      </div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xl font-extrabold">Así va el negocio</h2>
+        <span className="text-sm text-muted">Estado actual de pedidos y caja de papelería</span>
+      </div>
+      <div className="relative mb-5">
+        <Search size={21} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true" />
         <input
           value={q}
           onChange={(event) => setQ(event.target.value)}
-          placeholder="Buscar cliente, trabajo o número"
-          className="mt-4 w-full rounded-2xl border border-line bg-card px-4 py-3 text-lg"
+          placeholder="Buscar cliente, pedido o número"
+          aria-label="Buscar clientes y pedidos"
+          className="w-full min-h-14 rounded-2xl border border-line bg-card py-3 pl-12 pr-4 text-lg shadow-sm transition focus:border-stamp"
         />
-        {query && elsewhere.length > 0 ? (
-          <p className="mt-3 text-base text-muted">
-            También aparece en{" "}
-            {elsewhere.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setPlace(item.id)}
-                className="mr-3 font-medium text-ink underline decoration-line underline-offset-4"
-              >
-                {item.label} ({item.n})
-              </button>
-            ))}
-          </p>
-        ) : null}
-      </header>
+      </div>
+      {query && elsewhere.length > 0 ? (
+        <p className="mb-4 text-base text-muted">
+          También aparece en{" "}
+          {elsewhere.map((item) => (
+            <button key={item.id} type="button" onClick={() => setPlace(item.id)} className="mr-3 font-bold text-stamp underline underline-offset-4">
+              {item.label} ({item.n})
+            </button>
+          ))}
+        </p>
+      ) : null}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <PlaceCard
@@ -117,6 +129,7 @@ export function Home({
           title="Pendientes"
           hint="Falta hacerlos"
           value={String(taller.length)}
+          icon={<Clock3 size={23}/>}
           onClick={() => setPlace("pendientes")}
         />
         <PlaceCard
@@ -124,6 +137,7 @@ export function Home({
           title="Listos"
           hint="Para entregar"
           value={String(listos.length)}
+          icon={<CircleCheck size={23}/>}
           onClick={() => setPlace("listos")}
         />
         <PlaceCard
@@ -131,6 +145,7 @@ export function Home({
           title="Por cobrar"
           hint="Dinero pendiente"
           value={String(debtJobs.length + debtSales.length)}
+          icon={<Wallet size={23}/>}
           onClick={() => setPlace("cobrar")}
         />
         <PlaceCard
@@ -138,6 +153,7 @@ export function Home({
           title="Papelería"
           hint="Caja de hoy"
           value={formatMoney(caja)}
+          icon={<ReceiptText size={23}/>}
           onClick={() => setPlace("papeleria")}
         />
       </div>
@@ -227,11 +243,14 @@ export function Home({
         ) : null}
       </section>
 
-      <footer className="no-print mt-12 flex flex-wrap items-center gap-3 border-t border-line pt-6">
-        <Quiet onClick={onRepeat}>Repetir un pedido</Quiet>
-        <Quiet onClick={onTypes}>Trabajos de imprenta</Quiet>
-        <Quiet onClick={() => downloadSnapshot(toSnapshot(useShop.getState()))}>Guardar copia</Quiet>
-        <Quiet onClick={() => fileRef.current?.click()}>Traer copia</Quiet>
+      <footer className="no-print mt-12 rounded-2xl border border-line bg-card p-5">
+        <h2 className="mb-3 text-lg font-bold">Otras herramientas</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <Quiet onClick={onRepeat}><Repeat2 size={19} className="mr-2"/> Repetir pedido</Quiet>
+          <Quiet onClick={onTypes}><ListPlus size={19} className="mr-2"/> Servicios de imprenta</Quiet>
+          <Quiet onClick={() => downloadSnapshot(toSnapshot(useShop.getState()))}>Descargar respaldo</Quiet>
+          <Quiet onClick={() => fileRef.current?.click()}>Importar respaldo</Quiet>
+        </div>
         <input
           ref={fileRef}
           type="file"
@@ -304,23 +323,27 @@ function PlaceCard({
   title,
   hint,
   value,
+  icon,
   onClick,
 }: {
   active: boolean;
   title: string;
   hint: string;
   value: string;
+  icon?: ReactNode;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-2xl px-4 py-4 text-left ${active ? "bg-ink text-band-fg" : "border border-line bg-card text-ink shadow-ticket"}`}
+      className={`min-h-36 rounded-2xl border-2 px-4 py-4 text-left transition sm:px-5 ${active ? "border-stamp bg-blue-50 text-ink shadow-sm" : "border-line bg-card text-ink shadow-ticket hover:border-stamp/40"}`}
     >
-      <span className={`block text-sm font-medium ${active ? "text-band-fg/65" : "text-muted"}`}>{hint}</span>
-      <span className="mt-3 block font-display text-4xl leading-none tabular-nums">{value}</span>
-      <span className="mt-2 block text-lg font-medium">{title}</span>
+      <span className="flex items-center justify-between gap-2 text-sm font-semibold text-muted">
+        {hint}<span className={active ? "text-stamp" : "text-muted"}>{icon}</span>
+      </span>
+      <span className="mt-2 block text-3xl font-extrabold leading-none tabular-nums sm:text-4xl">{value}</span>
+      <span className="mt-3 block text-lg font-bold">{title}</span>
     </button>
   );
 }
@@ -355,7 +378,7 @@ function Pile({
           ) : null}
         </div>
       ) : (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">{children}</div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">{children}</div>
       )}
     </div>
   );
