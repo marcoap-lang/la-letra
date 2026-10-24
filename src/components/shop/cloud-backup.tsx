@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { Cloud, CloudAlert, CloudCheck, CloudUpload, Download, KeyRound, LockKeyhole, RefreshCw, X } from "lucide-react";
 import { downloadSnapshot, parseSnapshot, toSnapshot, useShop, type Snapshot } from "@/lib/shop/store";
 
@@ -173,7 +173,7 @@ export function CloudBackup() {
     return () => clearInterval(interval);
   }, [mode, importRemote]);
 
-  async function login(event: React.FormEvent) {
+  async function login(event: FormEvent) {
     event.preventDefault();
     if (!accessCode.trim()) return;
     setBusy(true);
@@ -255,7 +255,7 @@ export function CloudBackup() {
             </div>
           )}
           <p className="mt-4 border-t border-line pt-3 text-xs leading-relaxed text-muted">
-            Los respaldos se guardan cifrados en el almacenamiento privado de Vercel.
+            Los respaldos se guardan en un almacén privado de Vercel.
             Si dos equipos modifican datos a la vez, revise el aviso antes de restaurar.
             Esta función es un respaldo con recuperación, no una base transaccional de múltiples cajeros.
           </p>
