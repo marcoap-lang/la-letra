@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { Cloud, CloudAlert, CloudCheck, CloudUpload, Download, KeyRound, LockKeyhole, RefreshCw, X } from "lucide-react";
+import { Cloud, AlertTriangle, CheckCircle2, CloudUpload, Download, KeyRound, LockKeyhole, RefreshCw, X } from "lucide-react";
 import { downloadSnapshot, parseSnapshot, toSnapshot, useShop, type Snapshot } from "@/lib/shop/store";
 
 type Mode = "checking" | "locked" | "ready" | "conflict" | "saving" | "error";
@@ -221,7 +221,7 @@ export function CloudBackup() {
       {!expanded ? (
         <button type="button" onClick={() => setExpanded(true)}
           className={"flex min-h-12 items-center gap-2 rounded-2xl border bg-card px-4 py-3 text-sm font-bold shadow-xl " + (mode === "ready" ? "border-emerald-300 text-emerald-700" : mode === "conflict" ? "border-amber-400 text-amber-700" : "border-line text-ink")}>
-          {mode === "ready" ? <CloudCheck size={21}/> : mode === "conflict" || mode === "error" ? <CloudAlert size={21}/> : <Cloud size={21}/>}
+          {mode === "ready" ? <CheckCircle2 size={21}/> : mode === "conflict" || mode === "error" ? <AlertTriangle size={21}/> : <Cloud size={21}/>}
           {mode === "ready" ? "Copia en nube activa" : mode === "saving" ? "Guardando copia..." : mode === "conflict" ? "Revisar copias" : mode === "checking" ? "Verificando copia..." : "Activar respaldo en nube"}
         </button>
       ) : (
