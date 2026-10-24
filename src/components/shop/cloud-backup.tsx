@@ -7,7 +7,7 @@ type CloudData = { revision: string | null; snapshot: Snapshot | null; savedAt?:
 const REVISION_KEY = "la-letra-cloud-revision";
 
 function hasTransactions(snapshot: Snapshot): boolean {
-  return snapshot.jobs.length > 0 || (snapshot.sales?.length ?? 0) > 0 || snapshot.customers.length > 0;
+  return snapshot.jobs.length > 0 || (snapshot.sales?.length ?? 0) > 0 || snapshot.customers.length > 0 || (snapshot.goods ?? []).some((good) => good.price > 0);
 }
 async function api(path: string, init?: RequestInit) {
   return fetch(path, { credentials: "same-origin", cache: "no-store", ...init });
