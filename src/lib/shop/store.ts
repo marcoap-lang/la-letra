@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { SEED_DRAWERS, SEED_TYPES, type Drawer, type JobType } from "./catalog";
 import { digits, norm, roundMoney } from "./format";
-import { SEED_GOODS, type Good } from "./goods";
+import { SEED_GOODS, type Good, type GoodCategory } from "./goods";
 
 export type { Drawer, JobType, Good };
 
@@ -92,7 +92,7 @@ type ShopState = Snapshot & {
   addType: (input: { drawerId: string; name: string; needsProof: boolean }) => string;
   setTypeHidden: (id: string, hidden: boolean) => void;
   renameType: (id: string, name: string) => void;
-  addGood: (name: string, price: number) => string;
+  addGood: (name: string, price: number, category?: GoodCategory) => string;
   setGoodPrice: (id: string, price: number) => void;
   setGoodHidden: (id: string, hidden: boolean) => void;
   saveJob: (input: NewJobInput) => string;
@@ -246,7 +246,7 @@ export const useShop = create<ShopState>()(
             type.id === id ? { ...type, name: name.trim() || type.name } : type,
           ),
         })),
-      addGood: (name, price) => {
+      addGood: (name, price, category = "Otros") => {
         const clean = name.trim();
         const found = get().goods.find((good) => norm(good.name) === norm(clean));
         if (found) {
@@ -259,7 +259,7 @@ export const useShop = create<ShopState>()(
         }
         const id = uid();
         set((state) => ({
-          goods: [...state.goods, { id, name: clean, price: roundMoney(Math.max(0, price)), hidden: false }],
+          goods: [...state.goods, { id, name: clean, category, price: roundMoney(Math.max(0, price)), hidden: false }],
         }));
         return id;
       },
@@ -483,7 +483,16 @@ export const useShop = create<ShopState>()(
         return {
           ...current,
           ...saved,
-          goods: Array.isArray(saved.goods) && saved.goods.length > 0 ? saved.goods : current.goods,
+          goods: (() => {
+            // Add newly introduced defaults while preserving all saved prices and custom goods.
+            const prior = Array.isArray(saved.goods) ? saved.goods : [];
+            const byId = new Map(prior.map((good) => [good.id, good]));
+            const seedIds = new Set(current.goods.map((good) => good.id));
+            return [
+              ...current.goods.map((good) => ({ ...good, ...byId.get(good.id) })),
+              ...prior.filter((good) => !seedIds.has(good.id)),
+            ];
+          })(),
           sales: Array.isArray(saved.sales) ? saved.sales : [],
         };
       },
