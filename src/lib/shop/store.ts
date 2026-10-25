@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { SEED_DRAWERS, SEED_TYPES, type Drawer, type JobType, type SupplyUse } from "./catalog";
 import { digits, norm, roundMoney } from "./format";
+import { findDuplicate, normalizeBilling, normalizeCustomer, type Billing, type Customer } from "./customers";
 import { SEED_GOODS, type Good, type GoodCategory } from "./goods";
 import {
   applyAdjust,
@@ -16,11 +17,9 @@ import {
   type Supply,
 } from "./inventory";
 
-export type { Drawer, JobType, Good, GoodCategory, SupplyUse, Supply, StockMove, JobUse };
+export type { Drawer, JobType, Good, GoodCategory, SupplyUse, Supply, StockMove, JobUse, Billing, Customer };
 
 export type JobStatus = "nuevo" | "aprobado" | "listo" | "entregado";
-
-export type Customer = { id: string; name: string; phone: string };
 
 export type Job = {
   id: string;
@@ -127,7 +126,8 @@ type ShopState = Snapshot & {
     jobId: string,
     patch: Partial<Pick<Job, "quantity" | "due" | "notes" | "price" | "paid" | "typeName">>,
   ) => void;
-  updateCustomer: (id: string, patch: { name?: string; phone?: string }) => void;
+  addCustomer: (name: string, phone: string) => string;
+  updateCustomer: (id: string, patch: { name?: string; phone?: string; billing?: Billing }) => void;
   deleteJob: (jobId: string) => void;
   replaceAll: (snap: Snapshot) => void;
 };
@@ -200,7 +200,7 @@ export function parseSnapshot(value: unknown): Snapshot | null {
     version: 2,
     drawers: value.drawers as Drawer[],
     types: value.types as JobType[],
-    customers: value.customers as Customer[],
+    customers: (value.customers as Customer[]).map(normalizeCustomer),
     jobs: value.jobs as Job[],
     payments: value.payments as Payment[],
     nextNumber: value.nextNumber,
@@ -608,17 +608,29 @@ export const useShop = create<ShopState>()(
             moves: ledger.moves,
           };
         }),
+      addCustomer: (name, phone) => {
+        const cleanName = name.trim();
+        const cleanPhone = phone.trim();
+        const found = findDuplicate(get().customers, cleanName, cleanPhone);
+        if (found) return found.id;
+        const id = uid();
+        set((state) => ({ customers: [...state.customers, { id, name: cleanName, phone: cleanPhone }] }));
+        return id;
+      },
       updateCustomer: (id, patch) =>
         set((state) => ({
-          customers: state.customers.map((customer) =>
-            customer.id === id
-              ? {
-                  ...customer,
-                  name: patch.name?.trim() || customer.name,
-                  phone: patch.phone === undefined ? customer.phone : patch.phone.trim(),
-                }
-              : customer,
-          ),
+          customers: state.customers.map((customer) => {
+            if (customer.id !== id) return customer;
+            const next: Customer = {
+              ...customer,
+              name: patch.name?.trim() || customer.name,
+              phone: patch.phone === undefined ? customer.phone : patch.phone.trim(),
+            };
+            if (patch.billing === undefined) return next;
+            const { billing: _old, ...rest } = next;
+            const billing = normalizeBilling(patch.billing);
+            return billing ? { ...rest, billing } : rest;
+          }),
         })),
       deleteJob: (jobId) =>
         set((state) => {

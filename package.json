@@ -19,7 +19,8 @@
     "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts src/lib/preview-path-prefix.test.ts",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test:inventario": "rolldown src/lib/shop/inventory.test.ts --format esm --platform node -o node_modules/.cache/inventory-test/t.mjs && node --test node_modules/.cache/inventory-test/t.mjs"
+    "test:inventario": "rolldown src/lib/shop/inventory.test.ts --format esm --platform node -o node_modules/.cache/inventory-test/t.mjs && node --test node_modules/.cache/inventory-test/t.mjs",
+    "test:clientes": "rolldown src/lib/shop/customers.test.ts --format esm --platform node -o node_modules/.cache/clientes-test/t.mjs && node --test node_modules/.cache/clientes-test/t.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",
