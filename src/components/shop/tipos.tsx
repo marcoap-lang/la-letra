@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useShop } from "@/lib/shop/store";
 import { Field, Frame, Primary, Quiet } from "./ui";
 
-export function Tipos({ onBack }: { onBack: () => void }) {
+export function Tipos({ onBack, onLink }: { onBack: () => void; onLink: (typeId: string) => void }) {
   const drawers = useShop((s) => s.drawers);
   const types = useShop((s) => s.types);
+  const supplies = useShop((s) => s.supplies);
   const addDrawer = useShop((s) => s.addDrawer);
   const addType = useShop((s) => s.addType);
   const setTypeHidden = useShop((s) => s.setTypeHidden);
@@ -33,12 +34,20 @@ export function Tipos({ onBack }: { onBack: () => void }) {
               {opened ? (
                 <ul className="mt-4 flex flex-col gap-3">
                   {items.map((type) => (
-                    <li key={type.id} className="flex items-center justify-between gap-3">
+                    <li key={type.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                       <span className={type.hidden ? "text-muted" : "text-lg"}>
                         {type.name}
                         {type.hidden ? " · oculto" : ""}
+                        {type.uses && type.uses.length > 0 ? (
+                          <span className="block text-base text-muted">
+                            Gasta: {type.uses.map((use) => supplies.find((item) => item.id === use.supplyId)?.name ?? "insumo").join(", ")}
+                          </span>
+                        ) : null}
                       </span>
-                      <Quiet onClick={() => setTypeHidden(type.id, !type.hidden)}>{type.hidden ? "Mostrar" : "Ocultar"}</Quiet>
+                      <span className="flex flex-wrap gap-2">
+                        <Quiet onClick={() => onLink(type.id)}>{type.uses && type.uses.length > 0 ? "Insumos" : "Ligar insumos"}</Quiet>
+                        <Quiet onClick={() => setTypeHidden(type.id, !type.hidden)}>{type.hidden ? "Mostrar" : "Ocultar"}</Quiet>
+                      </span>
                     </li>
                   ))}
                   {addingIn === drawer.id ? (

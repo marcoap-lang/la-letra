@@ -18,7 +18,7 @@ class ConflictError extends Error {}
 class TooBigError extends Error {}
 
 function hasTransactions(s: Snapshot): boolean {
-  return s.jobs.length > 0 || (s.sales?.length ?? 0) > 0 || s.customers.length > 0 || (s.goods ?? []).some((g) => g.price > 0);
+  return s.jobs.length > 0 || (s.sales?.length ?? 0) > 0 || s.customers.length > 0 || (s.goods ?? []).some((g) => g.price > 0 || g.stock !== undefined) || (s.supplies?.length ?? 0) > 0;
 }
 function readRevision(): number {
   const n = Number(localStorage.getItem(REVISION_KEY));

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { dueFromChoice, formatDay, formatMoney, norm, parseMoney, type DueChoice } from "@/lib/shop/format";
 import { useShop } from "@/lib/shop/store";
 import type { Draft } from "./nav";
+import { qtyText, wantOf } from "@/lib/shop/inventory";
 import { Chip, Field, Frame, Primary, Quiet, Section, Stepper } from "./ui";
 
 const DUE: { id: DueChoice; label: string }[] = [
@@ -38,6 +39,7 @@ export function Orden({
   const jobs = useShop((s) => s.jobs);
   const drawers = useShop((s) => s.drawers);
   const types = useShop((s) => s.types);
+  const supplies = useShop((s) => s.supplies);
   const addType = useShop((s) => s.addType);
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
@@ -49,6 +51,12 @@ export function Orden({
     ? customers.filter((customer) => norm(customer.name).includes(query)).slice(0, 4)
     : recent(customers, jobs);
   const chosen = types.find((type) => type.id === draft.typeId);
+  const gasto = (chosen?.uses ?? [])
+    .map((use) => {
+      const supply = supplies.find((item) => item.id === use.supplyId);
+      return supply ? qtyText(wantOf(use, draft.quantity), supply.unit) + " de " + supply.name : "";
+    })
+    .filter(Boolean);
   const drawer = drawers.find((item) => item.id === draft.drawerId);
   const visible = types.filter((type) => type.drawerId === draft.drawerId && !type.hidden);
   const price = parseMoney(draft.price);
@@ -191,6 +199,11 @@ export function Orden({
           <div>
             <p className="mb-2 text-base text-muted">Cantidad</p>
             <Stepper value={draft.quantity} onChange={(quantity) => patch({ quantity })} />
+            {gasto.length > 0 ? (
+              <p className="mt-3 rounded-xl bg-tint px-4 py-3 text-base">
+                Al guardar se descuenta del inventario: {gasto.join(", ")}.
+              </p>
+            ) : null}
           </div>
           <div className="flex flex-wrap gap-2">
             {DUE.map((choice) => (

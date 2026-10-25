@@ -8,7 +8,10 @@ export type Screen =
   | { name: "cobrar"; customerId?: string; saleId?: string }
   | { name: "repetir" }
   | { name: "tipos" }
-  | { name: "papeleria" };
+  | { name: "papeleria" }
+  | { name: "inventario"; tab?: "papeleria" | "insumos" }
+  | { name: "ligar"; typeId: string }
+  | { name: "elegirServicio"; supplyId: string };
 
 export type Draft = {
   customerId: string | null;

@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { dueFromChoice, formatDay, formatMoney, parseMoney, todayISO, waLink, type DueChoice } from "@/lib/shop/format";
 import { jobMessage } from "@/lib/shop/messages";
 import { balanceOf, useShop, type Job, type JobStatus } from "@/lib/shop/store";
+import { qtyText } from "@/lib/shop/inventory";
 import { Chip, Field, Frame, Primary, Quiet, Stepper } from "./ui";
 
 function openWhatsApp(phone: string, text: string) {
@@ -46,6 +47,7 @@ export function Trabajo({
   const customer = useShop((s) => s.customers.find((item) => item.id === job?.customerId));
   const setStatus = useShop((s) => s.setStatus);
   const deleteJob = useShop((s) => s.deleteJob);
+  const supplies = useShop((s) => s.supplies);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -63,6 +65,13 @@ export function Trabajo({
   const message = jobMessage(job, customer);
   const path = pathOf(job);
   const here = path.findIndex((item) => item.id === job.status);
+  const gastado = (job.used ?? [])
+    .filter((use) => use.took > 0)
+    .map((use) => {
+      const supply = supplies.find((item) => item.id === use.supplyId);
+      return supply ? `${qtyText(use.took, supply.unit)} de ${supply.name}` : "";
+    })
+    .filter(Boolean);
 
   return (
     <Frame onBack={onBack}>
@@ -111,6 +120,7 @@ export function Trabajo({
       </dl>
       {late ? <p className="mt-4 text-base font-medium text-stamp">Se pasó la fecha.</p> : null}
       {job.notes ? <p className="mt-4 rounded-lg bg-card px-4 py-3 text-lg">{job.notes}</p> : null}
+      {gastado.length > 0 ? <p className="mt-4 text-base text-muted">Insumos gastados: {gastado.join(", ")}.</p> : null}
 
       <div className="mt-8 flex flex-col items-start gap-3">
         {step ? (
@@ -142,7 +152,10 @@ export function Trabajo({
         </div>
         <p className="max-w-prose text-base whitespace-pre-wrap text-muted">{message}</p>
         {confirmDelete ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {gastado.length > 0 ? (
+              <p className="w-full text-base">Se devolverá al inventario: {gastado.join(", ")}.</p>
+            ) : null}
             <Primary
               tone="stamp"
               onClick={() => {
@@ -210,6 +223,9 @@ export function Editar({ jobId, onBack }: { jobId: string; onBack: () => void })
         <Field label="Nombre" value={name} onChange={setName} />
         <Field label="Teléfono" value={phone} inputMode="tel" onChange={setPhone} />
         <Stepper value={quantity} onChange={setQuantity} />
+        {job.used && job.used.length > 0 ? (
+          <p className="rounded-xl bg-tint px-4 py-3 text-base">Si cambia la cantidad, el inventario se ajusta solo.</p>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           {DUE.map((choice) => (
             <Chip key={choice.id} selected={dueChoice === choice.id} onClick={() => setDueChoice(choice.id)}>

@@ -1,8 +1,9 @@
 import { Children, useRef, useState, type ReactNode } from "react";
-import { ShoppingBag, ClipboardPlus, Search, Clock3, CircleCheck, Wallet, ReceiptText, ArrowRight, Repeat2, ListPlus } from "lucide-react";
+import { ShoppingBag, ClipboardPlus, Search, Clock3, CircleCheck, Wallet, ReceiptText, ArrowRight, Repeat2, ListPlus, Boxes, TriangleAlert } from "lucide-react";
 import { balanceOf, downloadSnapshot, parseSnapshot, saleBalance, toSnapshot, useShop, type Job, type Sale } from "@/lib/shop/store";
 import { formatDay, formatMoney, norm, todayISO } from "@/lib/shop/format";
 import { useSyncStatus } from "@/lib/shop/sync-status";
+import { alertsOf, qtyText } from "@/lib/shop/inventory";
 import { Frame, Primary, Quiet } from "./ui";
 
 function SyncBadge() {
@@ -27,6 +28,7 @@ export function Home({
   onOpen,
   onRepeat,
   onTypes,
+  onInventory,
   onAdvance,
   onDeliver,
   onCharge,
@@ -37,6 +39,7 @@ export function Home({
   onOpen: (jobId: string) => void;
   onRepeat: () => void;
   onTypes: () => void;
+  onInventory: (tab: "papeleria" | "insumos") => void;
   onAdvance: (job: Job) => void;
   onDeliver: (jobId: string) => void;
   onCharge: (customerId: string) => void;
@@ -45,6 +48,8 @@ export function Home({
   const jobs = useShop((s) => s.jobs);
   const sales = useShop((s) => s.sales);
   const customers = useShop((s) => s.customers);
+  const goods = useShop((s) => s.goods);
+  const supplies = useShop((s) => s.supplies);
   const replaceAll = useShop((s) => s.replaceAll);
   const fileRef = useRef<HTMLInputElement>(null);
   const [copyNote, setCopyNote] = useState("");
@@ -53,6 +58,7 @@ export function Home({
   const [q, setQ] = useState("");
   const admin = new URLSearchParams(window.location.search).get("admin") === "1";
 
+  const lowStock = alertsOf(goods, supplies);
   const nameOf = (id: string) => customers.find((customer) => customer.id === id)?.name ?? "Sin nombre";
   const taller = jobs.filter((job) => job.status === "nuevo" || job.status === "aprobado");
   const listos = jobs.filter((job) => job.status === "listo");
@@ -113,7 +119,46 @@ export function Home({
           </span>
           <ArrowRight className="hidden text-ink/40 transition group-hover:translate-x-1 sm:block" size={25}/>
         </button>
+        <button type="button" onClick={() => onInventory("papeleria")} className="group flex min-h-24 items-center gap-4 rounded-3xl border border-line bg-card p-4 text-left shadow-ticket hover:border-stamp/40 hover:shadow-lift sm:p-5 md:col-span-2">
+          <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-tint text-stamp"><Boxes size={30} strokeWidth={2} /></span>
+          <span className="flex-1">
+            <span className="block text-2xl font-extrabold">Inventario</span>
+            {lowStock.length > 0 ? (
+              <span className="mt-0.5 block text-base font-semibold text-amber-800">
+                {lowStock.length === 1 ? "1 por acabarse" : `${lowStock.length} por acabarse`}
+              </span>
+            ) : (
+              <span className="mt-0.5 block text-base text-muted">Cuánto hay de papelería e insumos</span>
+            )}
+          </span>
+          <ArrowRight className="hidden text-ink/40 transition group-hover:translate-x-1 sm:block" size={25}/>
+        </button>
       </div>
+      {lowStock.length > 0 ? (
+        <section role="status" className="mb-8 rounded-3xl border border-amber-300 bg-amber-50 p-4 shadow-ticket sm:p-6">
+          <div className="flex items-center gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-900"><TriangleAlert size={24} /></span>
+            <h2 className="text-2xl font-extrabold tracking-tight text-amber-950">Por acabarse</h2>
+          </div>
+          <ul className="mt-4 flex flex-col divide-y divide-amber-200">
+            {lowStock.slice(0, 5).map((item) => (
+              <li key={`${item.what}-${item.id}`} className="flex items-baseline justify-between gap-3 py-2 text-lg">
+                <span className="font-semibold">{item.name}</span>
+                <span className={`shrink-0 tabular-nums ${item.state === "agotado" ? "font-bold text-rose-800" : "text-amber-950"}`}>
+                  {item.state === "agotado" ? "Se acabó" : `Quedan ${item.what === "supply" ? qtyText(item.qty, item.unit) : item.qty}`}
+                  {item.review && item.state === "ok" ? "Revisar" : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {lowStock.length > 5 ? <p className="mt-2 text-base text-amber-900">Y {lowStock.length - 5} más.</p> : null}
+          <div className="mt-4">
+            <Primary tone="stamp" onClick={() => onInventory(lowStock[0].what === "supply" ? "insumos" : "papeleria")}>
+              Ir a Inventario
+            </Primary>
+          </div>
+        </section>
+      ) : null}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-2xl font-extrabold tracking-tight">Así va el negocio</h2>
         <span className="text-sm text-muted">Estado actual de pedidos y caja de papelería</span>

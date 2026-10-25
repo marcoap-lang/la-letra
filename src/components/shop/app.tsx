@@ -8,6 +8,8 @@ import { emptyDraft, type Draft, type Screen } from "./nav";
 import { Orden } from "./orden";
 import { Tipos } from "./tipos";
 import { Papeleria } from "./papeleria";
+import { Inventario } from "./inventario";
+import { ElegirServicio, Ligar } from "./ligar";
 
 export function ShopApp() {
   const [stack, setStack] = useState<Screen[]>([{ name: "home" }]);
@@ -15,6 +17,7 @@ export function ShopApp() {
   const [notice, setNotice] = useState<string | null>(null);
   const saveJob = useShop((s) => s.saveJob);
   const setStatus = useShop((s) => s.setStatus);
+  const setTypeUses = useShop((s) => s.setTypeUses);
 
   useEffect(() => {
     void Promise.resolve(useShop.persist.rehydrate());
@@ -22,6 +25,7 @@ export function ShopApp() {
 
   const screen = stack[stack.length - 1] ?? { name: "home" };
   const go = (next: Screen) => setStack((current) => [...current, next]);
+  const replace = (next: Screen) => setStack((current) => [...current.slice(0, -1), next]);
   const back = () => setStack((current) => (current.length > 1 ? current.slice(0, -1) : current));
   const home = () => {
     setDraft(emptyDraft());
@@ -49,6 +53,7 @@ export function ShopApp() {
         onOpen={(jobId) => go({ name: "trabajo", jobId })}
         onRepeat={() => go({ name: "repetir" })}
         onTypes={() => go({ name: "tipos" })}
+        onInventory={(tab) => go({ name: "inventario", tab })}
         onAdvance={advance}
         onDeliver={(jobId) => setStatus(jobId, "entregado")}
         onCharge={(customerId) => go({ name: "cobrar", customerId })}
@@ -121,5 +126,32 @@ export function ShopApp() {
     );
   }
   if (screen.name === "papeleria") return <Papeleria onBack={back} onSaved={home} />;
-  return <Tipos onBack={back} />;
+  if (screen.name === "inventario") {
+    return (
+      <Inventario
+        initialTab={screen.tab}
+        onBack={back}
+        onLinkSupply={(supplyId) => go({ name: "elegirServicio", supplyId })}
+      />
+    );
+  }
+  if (screen.name === "elegirServicio") {
+    return (
+      <ElegirServicio
+        supplyId={screen.supplyId}
+        onBack={back}
+        onPick={(typeId) => {
+          // Deja la liga lista (1 por pieza) y abre la pantalla para ajustarla.
+          const type = useShop.getState().types.find((item) => item.id === typeId);
+          const uses = type?.uses ?? [];
+          if (!uses.some((use) => use.supplyId === screen.supplyId)) {
+            setTypeUses(typeId, [...uses, { supplyId: screen.supplyId, per: 1, by: "pieza" }]);
+          }
+          replace({ name: "ligar", typeId });
+        }}
+      />
+    );
+  }
+  if (screen.name === "ligar") return <Ligar typeId={screen.typeId} onBack={back} />;
+  return <Tipos onBack={back} onLink={(typeId) => go({ name: "ligar", typeId })} />;
 }

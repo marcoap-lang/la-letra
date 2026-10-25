@@ -211,6 +211,9 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
                   <span className={`mt-2 block tabular-nums ${qty > 0 ? "text-stamp" : "text-muted"}`}>
                     {good.price > 0 ? formatMoney(good.price) : "Asignar precio"}
                   </span>
+                  {good.stock !== undefined && (good.stock <= 0 || (good.min ?? 0) > 0 && good.stock <= (good.min ?? 0)) ? (
+                    <span className="mt-1 block text-sm font-semibold text-amber-800">{good.stock <= 0 ? "Se acabó" : `Quedan ${good.stock}`}</span>
+                  ) : null}
                   {qty > 0 ? <span className="mt-3 inline-block rounded-lg bg-stamp px-2 py-1 text-sm font-semibold text-white">En cuenta: {qty}</span> : null}
                 </button>
               );
