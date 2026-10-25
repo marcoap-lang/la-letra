@@ -125,61 +125,21 @@ export function Home({
           </span>
           <ArrowRight className="hidden text-ink/40 transition group-hover:translate-x-1 sm:block" size={25}/>
         </button>
-        <button type="button" onClick={() => onInventory("papeleria")} className="group flex min-h-24 items-center gap-4 rounded-3xl border border-line bg-card p-4 text-left shadow-ticket hover:border-stamp/40 hover:shadow-lift sm:p-5">
-          <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-tint text-stamp"><Boxes size={30} strokeWidth={2} /></span>
-          <span className="flex-1">
-            <span className="block text-2xl font-extrabold">Inventario</span>
-            {lowStock.length > 0 ? (
-              <span className="mt-0.5 block text-base font-semibold text-amber-800">
-                {lowStock.length === 1 ? "1 por acabarse" : `${lowStock.length} por acabarse`}
-              </span>
-            ) : (
-              <span className="mt-0.5 block text-base text-muted">Cuánto hay de papelería e insumos</span>
-            )}
-          </span>
-          <ArrowRight className="hidden text-ink/40 transition group-hover:translate-x-1 sm:block" size={25}/>
-        </button>
-        <button type="button" onClick={onCustomers} className="group flex min-h-24 items-center gap-4 rounded-3xl border border-line bg-card p-4 text-left shadow-ticket hover:border-stamp/40 hover:shadow-lift sm:p-5">
-          <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-tint text-stamp"><Users size={30} strokeWidth={2} /></span>
-          <span className="flex-1">
-            <span className="block text-2xl font-extrabold">Clientes</span>
-            <span className="mt-0.5 block text-base text-muted">Teléfonos y datos para factura</span>
-          </span>
-          <ArrowRight className="hidden text-ink/40 transition group-hover:translate-x-1 sm:block" size={25}/>
-        </button>
-        <button type="button" onClick={onStats} className="group flex min-h-24 items-center gap-4 rounded-3xl border border-line bg-card p-4 text-left shadow-ticket hover:border-stamp/40 hover:shadow-lift sm:p-5 md:col-span-2">
-          <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-tint text-stamp"><ChartNoAxesColumn size={30} strokeWidth={2} /></span>
-          <span className="flex-1">
-            <span className="block text-2xl font-extrabold">Estadísticas</span>
-            <span className="mt-0.5 block text-base text-muted">Cuánto se vendió, cuánto se cobró y cómo va cada mes</span>
-          </span>
-          <ArrowRight className="hidden text-ink/40 transition group-hover:translate-x-1 sm:block" size={25}/>
-        </button>
       </div>
       {lowStock.length > 0 ? (
-        <section role="status" className="mb-8 rounded-3xl border border-amber-300 bg-amber-50 p-4 shadow-ticket sm:p-6">
-          <div className="flex items-center gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-900"><TriangleAlert size={24} /></span>
-            <h2 className="text-2xl font-extrabold tracking-tight text-amber-950">Por acabarse</h2>
-          </div>
-          <ul className="mt-4 flex flex-col divide-y divide-amber-200">
-            {lowStock.slice(0, 5).map((item) => (
-              <li key={`${item.what}-${item.id}`} className="flex items-baseline justify-between gap-3 py-2 text-lg">
-                <span className="font-semibold">{item.name}</span>
-                <span className={`shrink-0 tabular-nums ${item.state === "agotado" ? "font-bold text-rose-800" : "text-amber-950"}`}>
-                  {item.state === "agotado" ? "Se acabó" : `Quedan ${item.what === "supply" ? qtyText(item.qty, item.unit) : item.qty}`}
-                  {item.review && item.state === "ok" ? "Revisar" : ""}
-                </span>
-              </li>
-            ))}
-          </ul>
-          {lowStock.length > 5 ? <p className="mt-2 text-base text-amber-900">Y {lowStock.length - 5} más.</p> : null}
-          <div className="mt-4">
-            <Primary tone="stamp" onClick={() => onInventory(lowStock[0].what === "supply" ? "insumos" : "papeleria")}>
-              Ir a Inventario
-            </Primary>
-          </div>
-        </section>
+        <button
+          type="button"
+          role="status"
+          onClick={() => onInventory(lowStock[0].what === "supply" ? "insumos" : "papeleria")}
+          className="mb-6 flex min-h-12 w-full items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-2 text-left text-base text-amber-950"
+        >
+          <TriangleAlert size={20} className="shrink-0" />
+          <span className="flex-1 font-semibold">
+            {lowStock.length === 1 ? "1 cosa por acabarse" : `${lowStock.length} cosas por acabarse`}
+            <span className="font-normal">: {lowStock.slice(0, 2).map((item) => item.name).join(", ")}{lowStock.length > 2 ? "…" : ""}</span>
+          </span>
+          <span className="shrink-0 font-bold underline underline-offset-4">Ver</span>
+        </button>
       ) : null}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-2xl font-extrabold tracking-tight">Así va el negocio</h2>
@@ -334,8 +294,11 @@ export function Home({
       </section>
 
       <footer className="no-print mt-12 rounded-3xl border border-line/80 bg-card p-5 shadow-ticket">
-        <h2 className="mb-3 text-lg font-bold">Otras herramientas</h2>
+        <h2 className="mb-3 text-lg font-bold">Consultas y otras herramientas</h2>
         <div className="flex flex-wrap items-center gap-3">
+          <Quiet onClick={() => onInventory("papeleria")}><Boxes size={19} className="mr-2"/> Inventario{lowStock.length > 0 ? ` (${lowStock.length} por acabarse)` : ""}</Quiet>
+          <Quiet onClick={onCustomers}><Users size={19} className="mr-2"/> Clientes</Quiet>
+          <Quiet onClick={onStats}><ChartNoAxesColumn size={19} className="mr-2"/> Estadísticas</Quiet>
           <Quiet onClick={onRepeat}><Repeat2 size={19} className="mr-2"/> Repetir pedido</Quiet>
           <Quiet onClick={onTypes}><ListPlus size={19} className="mr-2"/> Servicios de imprenta</Quiet>
         </div>
