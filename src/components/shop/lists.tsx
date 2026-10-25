@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { balanceOf, saleBalance, useShop, type Job } from "@/lib/shop/store";
 import { formatMoney, norm, parseMoney } from "@/lib/shop/format";
 import type { Draft } from "./nav";
@@ -84,8 +85,8 @@ function Cobro({
   onOpen: (jobId: string) => void;
 }) {
   const customer = useShop((s) => s.customers.find((item) => item.id === customerId));
-  const openJobs = useShop((s) => s.jobs.filter((job) => job.customerId === customerId && balanceOf(job) > 0));
-  const openSales = useShop((s) => s.sales.filter((sale) => sale.customerId === customerId && saleBalance(sale) > 0));
+  const openJobs = useShop(useShallow((s) => s.jobs.filter((job) => job.customerId === customerId && balanceOf(job) > 0)));
+  const openSales = useShop(useShallow((s) => s.sales.filter((sale) => sale.customerId === customerId && saleBalance(sale) > 0)));
   const addPayment = useShop((s) => s.addPayment);
   const paySale = useShop((s) => s.paySale);
   const firstJob = openJobs[0];
