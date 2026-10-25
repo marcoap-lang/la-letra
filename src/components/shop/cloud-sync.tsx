@@ -4,6 +4,7 @@ import { signOut, type User } from "firebase/auth";
 import { AlertTriangle, CheckCircle2, Cloud, CloudUpload, Download, LockKeyhole, LogOut, X } from "lucide-react";
 import { auth, db, SHOP_COLLECTION, SHOP_DOC_ID } from "@/lib/firebase/client";
 import { downloadSnapshot, parseSnapshot, toSnapshot, useShop, type Snapshot } from "@/lib/shop/store";
+import { useSyncStatus } from "@/lib/shop/sync-status";
 
 type Mode = "checking" | "ready" | "saving" | "offline" | "conflict" | "denied";
 type Remote = { revision: number; snapshot: Snapshot | null };
@@ -40,9 +41,10 @@ export function CloudSync({ user }: { user: User }) {
   const generation = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const changeMode = (m: Mode) => { modeRef.current = m; setMode(m); };
+  const changeMode = (m: Mode) => { modeRef.current = m; setMode(m); useSyncStatus.setState({ mode: m }); };
   const markDirty = (v: boolean) => {
     dirty.current = v;
+    useSyncStatus.setState({ dirty: v });
     if (v) localStorage.setItem(DIRTY_KEY, "1"); else localStorage.removeItem(DIRTY_KEY);
   };
 
@@ -119,6 +121,7 @@ export function CloudSync({ user }: { user: User }) {
       if (!alive) return;
       revision.current = readRevision();
       dirty.current = localStorage.getItem(DIRTY_KEY) === "1";
+      useSyncStatus.setState({ dirty: dirty.current });
       unsub = onSnapshot(
         shopRef(),
         { includeMetadataChanges: false },

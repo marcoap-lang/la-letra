@@ -2,7 +2,26 @@ import { Children, useRef, useState, type ReactNode } from "react";
 import { ShoppingBag, ClipboardPlus, Search, Clock3, CircleCheck, Wallet, ReceiptText, ArrowRight, Repeat2, ListPlus } from "lucide-react";
 import { balanceOf, downloadSnapshot, parseSnapshot, saleBalance, toSnapshot, useShop, type Job, type Sale } from "@/lib/shop/store";
 import { formatDay, formatMoney, norm, todayISO } from "@/lib/shop/format";
+import { useSyncStatus } from "@/lib/shop/sync-status";
 import { Frame, Primary, Quiet } from "./ui";
+
+function SyncBadge() {
+  const { mode, dirty } = useSyncStatus();
+  const saving = mode === "saving" || (mode === "ready" && dirty);
+  const [text, tone] =
+    mode === "offline" ? ["Sin internet: se guardará al volver la conexión", "border-amber-400 bg-amber-50 text-amber-800"]
+    : saving ? ["Guardando…", "border-line bg-paper text-muted"]
+    : mode === "ready" ? ["Guardado en la nube", "border-emerald-300 bg-emerald-50 text-emerald-800"]
+    : mode === "conflict" ? ["Revisar datos (ver botón de la nube)", "border-amber-400 bg-amber-50 text-amber-800"]
+    : mode === "denied" ? ["Sin permiso para guardar", "border-amber-400 bg-amber-50 text-amber-800"]
+    : ["Verificando…", "border-line bg-paper text-muted"];
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <span role="status" className={"flex min-h-11 items-center rounded-xl border px-3 text-sm font-semibold " + tone}>{text}</span>
+      <button type="button" onClick={() => downloadSnapshot(toSnapshot(useShop.getState()))} className="text-sm font-semibold text-muted underline underline-offset-2 hover:text-ink">Descargar copia</button>
+    </div>
+  );
+}
 
 type Place = "pendientes" | "listos" | "cobrar" | "papeleria";
 
@@ -68,7 +87,7 @@ export function Home({
   return (
     <Frame
       narrow={false}
-      action={<button type="button" onClick={() => downloadSnapshot(toSnapshot(useShop.getState()))} title="Los datos todavía se guardan en este dispositivo. Descargar copia de seguridad." className="flex min-h-11 items-center rounded-xl border border-line bg-paper px-3 text-sm font-semibold text-muted hover:bg-blue-50">Datos en este equipo · Guardar copia</button>}
+      action={<SyncBadge />}
     >
       <header className="mb-6">
         <div className="flex flex-wrap items-end justify-between gap-2">
