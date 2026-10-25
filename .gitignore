@@ -11,3 +11,6 @@ screenshots
 .grok
 
 .project_id
+!.env.example
+.firebase
+*.local

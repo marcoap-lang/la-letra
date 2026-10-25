@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// La Letra: reglas CERRADAS.
+// Solo cuentas Google con correo verificado y que estén en la lista permitida.
+// Para agregar a alguien (p. ej. el papá), añade su correo en minúsculas a la lista.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function allowedEmails() {
+      return ['marcoap@gmail.com', 'imprentalaletra2@gmail.com'];
+    }
+
+    function isAllowedUser() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() in allowedEmails();
+    }
+
+    // Un solo documento por negocio con el Snapshot completo.
+    match /shops/la-letra {
+      allow read: if isAllowedUser();
+
+      // Primera escritura: revisión 1.
+      allow create: if isAllowedUser()
+        && request.resource.data.keys().hasOnly(['revision', 'updatedAt', 'updatedBy', 'snapshot'])
+        && request.resource.data.revision == 1
+        && request.resource.data.snapshot is map
+        && request.resource.data.updatedBy == request.auth.token.email.lower();
+
+      // Actualización: solo si la revisión nueva = revisión actual + 1
+      // (si otro equipo guardó antes, la escritura se rechaza y no se pisan datos).
+      allow update: if isAllowedUser()
+        && request.resource.data.keys().hasOnly(['revision', 'updatedAt', 'updatedBy', 'snapshot'])
+        && request.resource.data.revision == resource.data.revision + 1
+        && request.resource.data.snapshot is map
+        && request.resource.data.updatedBy == request.auth.token.email.lower();
+
+      allow delete: if false;
+    }
+
+    // Todo lo demás denegado.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
