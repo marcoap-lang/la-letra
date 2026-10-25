@@ -12,6 +12,7 @@ import { Inventario } from "./inventario";
 import { ElegirServicio, Ligar } from "./ligar";
 import { Cliente, Clientes } from "./clientes";
 import { Venta } from "./venta";
+import { Estadisticas } from "./estadisticas";
 
 export function ShopApp() {
   const [stack, setStack] = useState<Screen[]>([{ name: "home" }]);
@@ -57,6 +58,7 @@ export function ShopApp() {
         onTypes={() => go({ name: "tipos" })}
         onInventory={(tab) => go({ name: "inventario", tab })}
         onCustomers={() => go({ name: "clientes" })}
+        onStats={() => go({ name: "estadisticas" })}
         onAdvance={advance}
         onDeliver={(jobId) => setStatus(jobId, "entregado")}
         onCharge={(customerId) => go({ name: "cobrar", customerId })}
@@ -138,6 +140,9 @@ export function ShopApp() {
         }}
       />
     );
+  }
+  if (screen.name === "estadisticas") {
+    return <Estadisticas onBack={home} onInventory={() => go({ name: "inventario" })} />;
   }
   if (screen.name === "clientes") {
     return (

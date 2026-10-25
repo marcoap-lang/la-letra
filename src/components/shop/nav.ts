@@ -12,6 +12,7 @@ export type Screen =
   | { name: "inventario"; tab?: "papeleria" | "insumos" }
   | { name: "venta"; saleId: string }
   | { name: "clientes" }
+  | { name: "estadisticas" }
   | { name: "cliente"; customerId: string }
   | { name: "ligar"; typeId: string }
   | { name: "elegirServicio"; supplyId: string };

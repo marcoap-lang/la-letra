@@ -1,5 +1,5 @@
 import { Children, useRef, useState, type ReactNode } from "react";
-import { ShoppingBag, ClipboardPlus, Search, Clock3, CircleCheck, Wallet, ReceiptText, ArrowRight, Repeat2, ListPlus, Boxes, TriangleAlert, Users } from "lucide-react";
+import { ShoppingBag, ClipboardPlus, Search, Clock3, CircleCheck, Wallet, ReceiptText, ArrowRight, Repeat2, ListPlus, Boxes, TriangleAlert, Users, ChartNoAxesColumn } from "lucide-react";
 import { balanceOf, downloadSnapshot, parseSnapshot, saleBalance, toSnapshot, useShop, type Job, type Sale } from "@/lib/shop/store";
 import { formatDay, formatMoney, norm, todayISO } from "@/lib/shop/format";
 import { useSyncStatus } from "@/lib/shop/sync-status";
@@ -30,6 +30,7 @@ export function Home({
   onTypes,
   onInventory,
   onCustomers,
+  onStats,
   onAdvance,
   onDeliver,
   onCharge,
@@ -43,6 +44,7 @@ export function Home({
   onTypes: () => void;
   onInventory: (tab: "papeleria" | "insumos") => void;
   onCustomers: () => void;
+  onStats: () => void;
   onAdvance: (job: Job) => void;
   onDeliver: (jobId: string) => void;
   onCharge: (customerId: string) => void;
@@ -142,6 +144,14 @@ export function Home({
           <span className="flex-1">
             <span className="block text-2xl font-extrabold">Clientes</span>
             <span className="mt-0.5 block text-base text-muted">Teléfonos y datos para factura</span>
+          </span>
+          <ArrowRight className="hidden text-ink/40 transition group-hover:translate-x-1 sm:block" size={25}/>
+        </button>
+        <button type="button" onClick={onStats} className="group flex min-h-24 items-center gap-4 rounded-3xl border border-line bg-card p-4 text-left shadow-ticket hover:border-stamp/40 hover:shadow-lift sm:p-5 md:col-span-2">
+          <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-tint text-stamp"><ChartNoAxesColumn size={30} strokeWidth={2} /></span>
+          <span className="flex-1">
+            <span className="block text-2xl font-extrabold">Estadísticas</span>
+            <span className="mt-0.5 block text-base text-muted">Cuánto se vendió, cuánto se cobró y cómo va cada mes</span>
           </span>
           <ArrowRight className="hidden text-ink/40 transition group-hover:translate-x-1 sm:block" size={25}/>
         </button>
