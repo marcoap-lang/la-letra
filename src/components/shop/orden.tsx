@@ -138,7 +138,7 @@ export function Orden({
                     patch({ drawerId: item.id });
                     setProof(item.id !== "mostrador");
                   }}
-                  className="rounded-3xl border border-line bg-card p-4 text-left"
+                  className="rounded-3xl border border-line/80 bg-card shadow-ticket p-4 text-left"
                 >
                   <span className="block text-xl font-medium">{item.name}</span>
                   <span className="mt-1 block text-base text-muted">{HINTS[item.id] ?? "Trabajos de este cajón"}</span>
@@ -155,7 +155,7 @@ export function Orden({
                 ))}
               </div>
               {adding ? (
-                <div className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-4">
+                <div className="flex flex-col gap-3 rounded-3xl border border-line/80 bg-card shadow-ticket p-4">
                   <Field label="Nombre del trabajo nuevo" value={newName} onChange={setNewName} />
                   <div className="flex flex-wrap gap-2">
                     <Chip selected={proof} onClick={() => setProof(true)}>

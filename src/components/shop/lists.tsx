@@ -49,7 +49,7 @@ export function Cobrar({
               key={row.customer.id}
               type="button"
               onClick={() => onPick(row.customer.id)}
-              className="flex min-h-16 items-center justify-between rounded-3xl border border-line bg-card px-5 text-left"
+              className="flex min-h-16 items-center justify-between rounded-3xl border border-line/80 bg-card shadow-ticket px-5 text-left"
             >
               <span className="text-xl">{row.customer.name}</span>
               <span className="text-lg tabular-nums text-stamp">{formatMoney(row.owed)}</span>
@@ -60,7 +60,7 @@ export function Cobrar({
               key={sale.id}
               type="button"
               onClick={() => onPick(`sale:${sale.id}`)}
-              className="flex min-h-16 items-center justify-between rounded-3xl border border-line bg-card px-5 text-left"
+              className="flex min-h-16 items-center justify-between rounded-3xl border border-line/80 bg-card shadow-ticket px-5 text-left"
             >
               <span className="text-xl">{sale.customerName} · papelería</span>
               <span className="text-lg tabular-nums text-stamp">{formatMoney(saleBalance(sale))}</span>
@@ -260,7 +260,7 @@ export function Repetir({
               key={job.id}
               type="button"
               onClick={() => person && onUse(draftFrom(job, person, types), person.name)}
-              className="min-h-16 rounded-3xl border border-line bg-card px-5 text-left"
+              className="min-h-16 rounded-3xl border border-line/80 bg-card shadow-ticket px-5 text-left"
             >
               <span className="block text-xl">{person?.name ?? "Sin nombre"}</span>
               <span className="text-base text-muted">

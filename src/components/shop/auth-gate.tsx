@@ -7,6 +7,7 @@ import {
   type User,
 } from "firebase/auth";
 import { LogIn } from "lucide-react";
+import { Mark } from "./ui";
 import { auth, firebaseConfigured, googleProvider } from "@/lib/firebase/client";
 
 type AuthState = { status: "loading" } | { status: "out" } | { status: "in"; user: User };
@@ -61,13 +62,14 @@ export function AuthGate({ children }: { children: (user: User) => ReactNode }) 
   if (state.status === "out") {
     return (
       <Centered>
-        <h1 className="text-3xl font-extrabold">La Letra</h1>
-        <p className="mt-2 text-base text-muted">Imprenta y papelería · Tuxtepec</p>
+        <Mark />
+        <h1 className="mt-5 text-3xl font-extrabold tracking-tight">La Letra</h1>
+        <p className="mt-1 text-base text-muted">Imprenta y papelería · Tuxtepec</p>
         <button
           type="button"
           onClick={() => void signIn()}
           disabled={busy}
-          className="mt-8 flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-stamp px-6 text-lg font-bold text-white disabled:opacity-60"
+          className="mt-8 flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-stamp px-6 text-lg font-bold text-white shadow-brand hover:bg-stamp-dark disabled:opacity-60"
         >
           <LogIn size={22} /> {busy ? "Abriendo Google..." : "Entrar con Google"}
         </button>
@@ -90,8 +92,8 @@ export function AuthGate({ children }: { children: (user: User) => ReactNode }) 
 
 function Centered({ children }: { children: ReactNode }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-paper p-6">
-      <div className="w-full max-w-sm rounded-3xl border border-line bg-card p-8 text-center shadow-xl">{children}</div>
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-tint to-paper p-6">
+      <div className="flex w-full max-w-sm flex-col items-center rounded-3xl border border-line/80 bg-card p-8 text-center shadow-lift">{children}</div>
     </main>
   );
 }

@@ -147,14 +147,14 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
     >
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div>
-          <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-blue-50 text-stamp">
+          <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-tint text-stamp">
             <ShoppingBasket size={26}/>
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Nueva venta</h1>
           <p className="mt-2 max-w-xl text-base text-muted">
             Elija los artículos. La cuenta se calcula automáticamente.
           </p>
-          <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
+          <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-line/80 bg-card p-4 shadow-ticket">
             <label className="block">
               <span className="mb-2 block text-base font-bold text-ink">Buscar producto o servicio</span>
               <div className="relative">
@@ -205,7 +205,7 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
                   key={good.id}
                   type="button"
                   onClick={() => pick(good)}
-                  className={`min-h-28 rounded-2xl border-2 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${qty > 0 ? "border-stamp bg-blue-50 text-ink" : "border-line bg-card hover:border-stamp/60"}`}
+                  className={`min-h-28 rounded-2xl border-2 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${qty > 0 ? "border-stamp bg-tint text-ink" : "border-line bg-card hover:border-stamp/60"}`}
                 >
                   <span className="block text-lg font-medium leading-tight">{good.name}</span>
                   <span className={`mt-2 block tabular-nums ${qty > 0 ? "text-stamp" : "text-muted"}`}>
@@ -242,12 +242,12 @@ export function Papeleria({ onBack, onSaved }: { onBack: () => void; onSaved: ()
               </div>
             </div>
           ) : null}
-          <button type="button" onClick={() => setPrices((open) => !open)} className="mt-5 inline-flex min-h-12 items-center rounded-xl border border-line bg-card px-4 text-base font-semibold text-stamp shadow-sm transition hover:bg-blue-50">
+          <button type="button" onClick={() => setPrices((open) => !open)} className="mt-5 inline-flex min-h-12 items-center rounded-xl border border-line bg-card px-4 text-base font-semibold text-stamp shadow-sm transition hover:bg-tint">
             <Tags size={19} className="mr-2" />
             {prices ? "Cerrar catálogo" : "Agregar productos o editar precios"}
           </button>
           {prices ? (
-            <div className="mt-3 flex flex-col gap-3 rounded-3xl border border-line bg-card p-4">
+            <div className="mt-3 flex flex-col gap-3 rounded-3xl border border-line/80 bg-card shadow-ticket p-4">
               {goods.map((good) => (
                 <label key={good.id} className="grid grid-cols-[1fr_7rem] items-center gap-3">
                   <span>{good.name}</span>

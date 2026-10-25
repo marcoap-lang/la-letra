@@ -6,19 +6,16 @@ import { useSyncStatus } from "@/lib/shop/sync-status";
 import { Frame, Primary, Quiet } from "./ui";
 
 function SyncBadge() {
-  const { mode, dirty } = useSyncStatus();
-  const saving = mode === "saving" || (mode === "ready" && dirty);
-  const [text, tone] =
-    mode === "offline" ? ["Sin internet: se guardará al volver la conexión", "border-amber-400 bg-amber-50 text-amber-800"]
-    : saving ? ["Guardando…", "border-line bg-paper text-muted"]
-    : mode === "ready" ? ["Guardado en la nube", "border-emerald-300 bg-emerald-50 text-emerald-800"]
-    : mode === "conflict" ? ["Revisar datos (ver botón de la nube)", "border-amber-400 bg-amber-50 text-amber-800"]
-    : mode === "denied" ? ["Sin permiso para guardar", "border-amber-400 bg-amber-50 text-amber-800"]
-    : ["Verificando…", "border-line bg-paper text-muted"];
+  const { mode } = useSyncStatus();
+  const problem =
+    mode === "offline" ? "Sin internet. Sus cambios se guardarán al volver la conexión."
+    : mode === "denied" ? "Esta cuenta no puede guardar. Avise a soporte."
+    : mode === "conflict" ? "Hay datos distintos en la nube. Toque el aviso naranja de abajo para revisar."
+    : "";
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-      <span role="status" className={"flex min-h-11 items-center rounded-xl border px-3 text-sm font-semibold " + tone}>{text}</span>
-      <button type="button" onClick={() => downloadSnapshot(toSnapshot(useShop.getState()))} className="text-sm font-semibold text-muted underline underline-offset-2 hover:text-ink">Descargar copia</button>
+    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+      {problem ? <span role="alert" className="rounded-lg bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-900">{problem}</span> : null}
+      <button type="button" onClick={() => downloadSnapshot(toSnapshot(useShop.getState()))} className="min-h-11 px-1 text-sm font-semibold text-muted underline underline-offset-4 hover:text-ink">Descargar copia</button>
     </div>
   );
 }
@@ -89,36 +86,36 @@ export function Home({
       narrow={false}
       action={<SyncBadge />}
     >
-      <header className="mb-6">
+      <header className="mb-7">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[.12em] text-stamp">Buen día</p>
+            <p className="text-sm font-bold uppercase tracking-[.14em] text-stamp">Buen día</p>
             <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl">¿Qué vamos a hacer?</h1>
             <p className="mt-2 text-base text-muted">Elija una opción para comenzar.</p>
           </div>
-          <span className="rounded-xl border border-line bg-card px-3 py-2 text-sm font-semibold text-muted">{new Date().toLocaleDateString("es-MX", {day:"numeric", month:"long", year:"numeric"})}</span>
+          <span className="rounded-full border border-line bg-card px-4 py-2 text-sm font-semibold text-muted shadow-sm">{new Date().toLocaleDateString("es-MX", {day:"numeric", month:"long", year:"numeric"})}</span>
         </div>
       </header>
       <div className="mb-8 grid gap-3 md:grid-cols-2">
-        <button type="button" onClick={onSell} className="group flex min-h-36 items-center gap-4 rounded-2xl bg-stamp p-5 text-left text-white shadow-[0_10px_30px_rgba(23,105,212,.18)] transition hover:bg-blue-700 sm:p-6">
-          <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-white/20"><ShoppingBag size={34} strokeWidth={2} /></span>
+        <button type="button" onClick={onSell} className="group flex min-h-36 items-center gap-4 rounded-3xl bg-gradient-to-br from-blue-500 to-stamp-dark p-5 text-left text-white shadow-brand hover:brightness-105 sm:p-7">
+          <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-white/20 ring-1 ring-white/25"><ShoppingBag size={34} strokeWidth={2} /></span>
           <span className="flex-1">
             <span className="block text-2xl font-extrabold sm:text-3xl">Nueva venta</span>
             <span className="mt-1 block text-base text-white/90">Papelería, copias y artículos</span>
           </span>
           <ArrowRight className="hidden opacity-70 transition group-hover:translate-x-1 sm:block" size={25}/>
         </button>
-        <button type="button" onClick={onNew} className="group flex min-h-36 items-center gap-4 rounded-2xl border-2 border-ink bg-card p-5 text-left shadow-ticket transition hover:bg-blue-50 sm:p-6">
-          <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-stamp"><ClipboardPlus size={34} strokeWidth={2} /></span>
+        <button type="button" onClick={onNew} className="group flex min-h-36 items-center gap-4 rounded-3xl border border-line bg-card p-5 text-left shadow-ticket hover:border-stamp/40 hover:shadow-lift sm:p-7">
+          <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-tint text-stamp"><ClipboardPlus size={34} strokeWidth={2} /></span>
           <span className="flex-1">
             <span className="block text-2xl font-extrabold sm:text-3xl">Nuevo trabajo</span>
             <span className="mt-1 block text-base text-muted">Pedidos para la imprenta</span>
           </span>
-          <ArrowRight className="hidden text-ink/50 transition group-hover:translate-x-1 sm:block" size={25}/>
+          <ArrowRight className="hidden text-ink/40 transition group-hover:translate-x-1 sm:block" size={25}/>
         </button>
       </div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xl font-extrabold">Así va el negocio</h2>
+        <h2 className="text-2xl font-extrabold tracking-tight">Así va el negocio</h2>
         <span className="text-sm text-muted">Estado actual de pedidos y caja de papelería</span>
       </div>
       <div className="relative mb-5">
@@ -128,7 +125,7 @@ export function Home({
           onChange={(event) => setQ(event.target.value)}
           placeholder="Buscar cliente, pedido o número"
           aria-label="Buscar clientes y pedidos"
-          className="w-full min-h-14 rounded-2xl border border-line bg-card py-3 pl-12 pr-4 text-lg shadow-sm transition focus:border-stamp"
+          className="w-full min-h-14 rounded-2xl border border-line bg-card py-3 pl-12 pr-4 text-lg shadow-ticket"
         />
       </div>
       {query && elsewhere.length > 0 ? (
@@ -142,7 +139,7 @@ export function Home({
         </p>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <PlaceCard
           active={place === "pendientes"}
           title="Pendientes"
@@ -228,7 +225,7 @@ export function Home({
               />
             ))}
             {cobrarSales.map((sale) => (
-              <article key={sale.id} className="rounded-2xl border border-line bg-card p-4 shadow-ticket">
+              <article key={sale.id} className="rounded-2xl border border-line/80 bg-card p-4 shadow-ticket">
                 <p className="text-sm font-medium text-stamp">Papelería · saldo</p>
                 <p className="mt-2 font-display text-4xl leading-none tabular-nums">{sale.number}</p>
                 <p className="mt-3 text-xl font-medium">{sale.customerName}</p>
@@ -237,7 +234,7 @@ export function Home({
                 <button
                   type="button"
                   onClick={() => onChargeSale(sale.id)}
-                  className="mt-4 min-h-12 w-full rounded-xl bg-ink text-base font-medium text-band-fg"
+                  className="mt-4 min-h-12 w-full rounded-xl bg-ink text-base font-bold text-band-fg hover:bg-slate-800"
                 >
                   Cobrar
                 </button>
@@ -254,7 +251,7 @@ export function Home({
             onAction={onSell}
           >
             {papeleriaVis.map((sale) => (
-              <article key={sale.id} className="rounded-2xl border border-line bg-card p-4 shadow-ticket">
+              <article key={sale.id} className="rounded-2xl border border-line/80 bg-card p-4 shadow-ticket">
                 <SaleRow sale={sale} onCharge={() => onChargeSale(sale.id)} />
               </article>
             ))}
@@ -262,7 +259,7 @@ export function Home({
         ) : null}
       </section>
 
-      <footer className="no-print mt-12 rounded-2xl border border-line bg-card p-5">
+      <footer className="no-print mt-12 rounded-3xl border border-line/80 bg-card p-5 shadow-ticket">
         <h2 className="mb-3 text-lg font-bold">Otras herramientas</h2>
         <div className="flex flex-wrap items-center gap-3">
           <Quiet onClick={onRepeat}><Repeat2 size={19} className="mr-2"/> Repetir pedido</Quiet>
@@ -356,13 +353,15 @@ function PlaceCard({
     <button
       type="button"
       onClick={onClick}
-      className={`min-h-36 rounded-2xl border-2 px-4 py-4 text-left transition sm:px-5 ${active ? "border-stamp bg-blue-50 text-ink shadow-sm" : "border-line bg-card text-ink shadow-ticket hover:border-stamp/40"}`}
+      aria-pressed={active}
+      className={`flex min-h-36 flex-col rounded-3xl border px-4 py-4 text-left sm:px-5 ${active ? "border-stamp bg-tint text-ink shadow-lift ring-2 ring-stamp/30" : "border-line/80 bg-card text-ink shadow-ticket hover:border-stamp/40 hover:shadow-lift"}`}
     >
       <span className="flex items-center justify-between gap-2 text-sm font-semibold text-muted">
-        {hint}<span className={active ? "text-stamp" : "text-muted"}>{icon}</span>
+        <span>{hint}</span>
+        <span className={`flex size-10 items-center justify-center rounded-full ${active ? "bg-stamp text-white" : "bg-tint text-stamp"}`}>{icon}</span>
       </span>
-      <span className="mt-2 block text-3xl font-extrabold leading-none tabular-nums sm:text-4xl">{value}</span>
-      <span className="mt-3 block text-lg font-bold">{title}</span>
+      <span className="mt-auto block pt-3 text-3xl font-extrabold leading-none tabular-nums sm:text-4xl">{value}</span>
+      <span className="mt-1.5 block text-lg font-bold">{title}</span>
     </button>
   );
 }
@@ -385,13 +384,13 @@ function Pile({
   const count = Children.count(children);
   return (
     <div>
-      <h2 className="text-2xl font-medium tracking-tight">{title}</h2>
+      <h2 className="text-2xl font-extrabold tracking-tight">{title}</h2>
       <p className="mt-1 text-base text-muted">{hint}</p>
       {count === 0 ? (
-        <div className="mt-4 rounded-2xl border border-line bg-card px-5 py-8">
+        <div className="mt-4 rounded-2xl border border-dashed border-line bg-card/70 px-5 py-8">
           <p className="text-lg">{empty}</p>
           {action && onAction ? (
-            <button type="button" onClick={onAction} className="mt-4 min-h-12 text-lg font-medium text-stamp">
+            <button type="button" onClick={onAction} className="mt-4 min-h-12 text-lg font-bold text-stamp">
               {action}
             </button>
           ) : null}
@@ -421,7 +420,7 @@ function Ticket({
   const left = balanceOf(job);
   const late = job.status !== "entregado" && job.due < todayISO();
   return (
-    <article className="rounded-2xl border border-line bg-card p-4 shadow-ticket">
+    <article className="rounded-2xl border border-line/80 bg-card p-4 shadow-ticket">
       <button type="button" onClick={onOpen} className="w-full text-left">
         <span className="text-sm font-medium text-muted">{where}</span>
         <span className="mt-2 flex items-baseline justify-between gap-3">
@@ -441,7 +440,7 @@ function Ticket({
       <button
         type="button"
         onClick={onAction}
-        className="mt-4 min-h-12 w-full rounded-xl bg-ink text-base font-medium text-band-fg"
+        className="mt-4 min-h-12 w-full rounded-xl bg-ink text-base font-bold text-band-fg hover:bg-slate-800"
       >
         {action}
       </button>

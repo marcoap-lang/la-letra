@@ -1,19 +1,23 @@
 @import "tailwindcss";
 
 @theme {
-  --color-paper: #f5f7fb;
+  --color-paper: #f6f4ef;
   --color-card: #ffffff;
-  --color-ink: #172b46;
-  --color-muted: #56677d;
-  --color-line: #dae3ee;
+  --color-ink: #13233b;
+  --color-muted: #55627a;
+  --color-line: #e4dfd5;
   --color-stamp: #1769d4;
+  --color-stamp-dark: #1158b5;
+  --color-tint: #eaf2fd;
   --color-stamp-fg: #ffffff;
   --color-band: #152b47;
   --color-band-fg: #ffffff;
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
-  --radius-card: 1.25rem;
-  --shadow-ticket: 0 2px 5px rgb(23 43 70 / 4%), 0 12px 26px rgb(23 43 70 / 4%);
+  --radius-card: 1.5rem;
+  --shadow-ticket: 0 1px 2px rgb(19 35 59 / 5%), 0 6px 18px rgb(19 35 59 / 6%);
+  --shadow-lift: 0 2px 4px rgb(19 35 59 / 6%), 0 12px 28px rgb(19 35 59 / 10%);
+  --shadow-brand: 0 10px 24px rgb(23 105 212 / 25%);
 }
 @layer base {
   html, body {
@@ -28,6 +32,10 @@
   button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; }
   button, input, select, textarea { font: inherit; }
   button:disabled { cursor: not-allowed; opacity: .6; }
+  button { transition: background-color .15s, border-color .15s, box-shadow .15s, transform .1s; -webkit-tap-highlight-color: transparent; }
+  button:not(:disabled):active { transform: scale(.985); }
+  input, select, textarea { transition: border-color .15s, box-shadow .15s; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--color-stamp); box-shadow: 0 0 0 4px rgb(23 105 212 / 18%); }
   :focus-visible { outline: 3px solid var(--color-stamp); outline-offset: 3px; }
   ::placeholder { color: #728196; opacity: 1; }
 }

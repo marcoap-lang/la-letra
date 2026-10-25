@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { doc, onSnapshot, runTransaction, serverTimestamp } from "firebase/firestore";
 import { signOut, type User } from "firebase/auth";
-import { AlertTriangle, CheckCircle2, Cloud, CloudUpload, Download, LockKeyhole, LogOut, X } from "lucide-react";
+import { AlertTriangle, Cloud, CloudUpload, Download, LockKeyhole, LogOut, X } from "lucide-react";
 import { auth, db, SHOP_COLLECTION, SHOP_DOC_ID } from "@/lib/firebase/client";
 import { downloadSnapshot, parseSnapshot, toSnapshot, useShop, type Snapshot } from "@/lib/shop/store";
 import { useSyncStatus } from "@/lib/shop/sync-status";
@@ -198,16 +198,22 @@ export function CloudSync({ user }: { user: User }) {
     importRemote(remote, true);
   }
 
-  const ok = mode === "ready";
   const warn = mode === "conflict" || mode === "offline" || mode === "denied";
   return (
     <div className="no-print fixed bottom-4 right-4 z-40 max-w-[calc(100vw-2rem)]">
       {!expanded ? (
-        <button type="button" onClick={() => setExpanded(true)}
-          className={"flex min-h-12 items-center gap-2 rounded-2xl border bg-card px-4 py-3 text-sm font-bold shadow-xl " + (ok ? "border-emerald-300 text-emerald-700" : warn ? "border-amber-400 text-amber-700" : "border-line text-ink")}>
-          {ok ? <CheckCircle2 size={21}/> : warn ? <AlertTriangle size={21}/> : <Cloud size={21}/>}
-          {ok ? "Guardado en la nube" : mode === "saving" ? "Guardando..." : mode === "conflict" ? "Revisar datos" : mode === "offline" ? "Sin conexión" : mode === "denied" ? "Sin permiso" : "Verificando..."}
-        </button>
+        warn ? (
+          <button type="button" onClick={() => setExpanded(true)}
+            className="flex min-h-12 items-center gap-2 rounded-2xl border border-amber-400 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900 shadow-lift">
+            <AlertTriangle size={21}/>
+            {mode === "conflict" ? "Revisar datos" : mode === "offline" ? "Sin internet" : "Sin permiso"}
+          </button>
+        ) : (
+          <button type="button" onClick={() => setExpanded(true)} aria-label="Cuenta y nube"
+            className="flex size-11 items-center justify-center rounded-full border border-line bg-card/80 text-muted opacity-70 shadow-sm hover:opacity-100">
+            <Cloud size={20}/>
+          </button>
+        )
       ) : (
         <section aria-label="Nube" className="w-[390px] max-w-full rounded-2xl border border-line bg-card p-5 shadow-2xl">
           <div className="flex items-center justify-between">
