@@ -21,7 +21,8 @@
     "format": "prettier --write .",
     "test:inventario": "rolldown src/lib/shop/inventory.test.ts --format esm --platform node -o node_modules/.cache/inventory-test/t.mjs && node --test node_modules/.cache/inventory-test/t.mjs",
     "test:clientes": "rolldown src/lib/shop/customers.test.ts --format esm --platform node -o node_modules/.cache/clientes-test/t.mjs && node --test node_modules/.cache/clientes-test/t.mjs",
-    "test:borrar": "rolldown src/lib/shop/store.borrar.test.ts --format esm --platform node -o node_modules/.cache/borrar-test/t.mjs && node --test node_modules/.cache/borrar-test/t.mjs"
+    "test:borrar": "rolldown src/lib/shop/store.borrar.test.ts --format esm --platform node -o node_modules/.cache/borrar-test/t.mjs && node --test node_modules/.cache/borrar-test/t.mjs",
+    "test:estadisticas": "rolldown src/lib/shop/stats.test.ts --format esm --platform node -o node_modules/.cache/estadisticas-test/t.mjs && TZ=America/Mexico_City node --test node_modules/.cache/estadisticas-test/t.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",
