@@ -210,7 +210,7 @@ export function CloudSync({ user }: { user: User }) {
           </button>
         ) : (
           <button type="button" onClick={() => setExpanded(true)} aria-label="Cuenta y nube"
-            className="flex size-11 items-center justify-center rounded-full border border-line bg-card/80 text-muted opacity-70 shadow-sm hover:opacity-100">
+            className="flex size-11 items-center justify-center rounded-full border border-line/70 bg-card/70 text-muted opacity-50 hover:opacity-100 focus-visible:opacity-100">
             <Cloud size={20}/>
           </button>
         )

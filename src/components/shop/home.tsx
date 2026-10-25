@@ -15,7 +15,6 @@ function SyncBadge() {
   return (
     <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
       {problem ? <span role="alert" className="rounded-lg bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-900">{problem}</span> : null}
-      <button type="button" onClick={() => downloadSnapshot(toSnapshot(useShop.getState()))} className="min-h-11 px-1 text-sm font-semibold text-muted underline underline-offset-4 hover:text-ink">Descargar copia</button>
     </div>
   );
 }
@@ -52,6 +51,7 @@ export function Home({
   const [pending, setPending] = useState<string | null>(null);
   const [place, setPlace] = useState<Place>("pendientes");
   const [q, setQ] = useState("");
+  const admin = new URLSearchParams(window.location.search).get("admin") === "1";
 
   const nameOf = (id: string) => customers.find((customer) => customer.id === id)?.name ?? "Sin nombre";
   const taller = jobs.filter((job) => job.status === "nuevo" || job.status === "aprobado");
@@ -264,9 +264,16 @@ export function Home({
         <div className="flex flex-wrap items-center gap-3">
           <Quiet onClick={onRepeat}><Repeat2 size={19} className="mr-2"/> Repetir pedido</Quiet>
           <Quiet onClick={onTypes}><ListPlus size={19} className="mr-2"/> Servicios de imprenta</Quiet>
-          <Quiet onClick={() => downloadSnapshot(toSnapshot(useShop.getState()))}>Descargar respaldo</Quiet>
-          <Quiet onClick={() => fileRef.current?.click()}>Importar respaldo</Quiet>
         </div>
+        {admin ? (
+          <div className="mt-5 border-t border-dashed border-line pt-4">
+            <p className="mb-2 text-sm font-semibold text-muted">Administración (solo Marco)</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <Quiet onClick={() => downloadSnapshot(toSnapshot(useShop.getState()))}>Descargar respaldo</Quiet>
+              <Quiet onClick={() => fileRef.current?.click()}>Importar respaldo</Quiet>
+            </div>
+          </div>
+        ) : null}
         <input
           ref={fileRef}
           type="file"
@@ -297,7 +304,7 @@ export function Home({
       {copyNote ? <p className="mt-3 text-base text-stamp">{copyNote}</p> : null}
       {pending ? (
         <div className="mt-4 flex flex-wrap items-center gap-3 rounded-3xl border border-line bg-card p-4">
-          <p className="text-base">Esto reemplaza lo que hay en este aparato.</p>
+          <p className="text-base font-semibold">Esto reemplaza TODOS los datos actuales por los del archivo. ¿Seguro?</p>
           <Primary
             tone="stamp"
             onClick={() => {
@@ -306,7 +313,7 @@ export function Home({
               setPending(null);
             }}
           >
-            Traer la copia
+            Sí, reemplazar datos
           </Primary>
           <Quiet onClick={() => setPending(null)}>Cancelar</Quiet>
         </div>
