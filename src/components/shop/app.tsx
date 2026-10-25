@@ -11,6 +11,7 @@ import { Papeleria } from "./papeleria";
 import { Inventario } from "./inventario";
 import { ElegirServicio, Ligar } from "./ligar";
 import { Cliente, Clientes } from "./clientes";
+import { Venta } from "./venta";
 
 export function ShopApp() {
   const [stack, setStack] = useState<Screen[]>([{ name: "home" }]);
@@ -60,6 +61,7 @@ export function ShopApp() {
         onDeliver={(jobId) => setStatus(jobId, "entregado")}
         onCharge={(customerId) => go({ name: "cobrar", customerId })}
         onChargeSale={(saleId) => go({ name: "cobrar", saleId })}
+        onOpenSale={(saleId) => go({ name: "venta", saleId })}
       />
     );
   }
@@ -112,6 +114,16 @@ export function ShopApp() {
           else go({ name: "cobrar", customerId: token });
         }}
         onOpen={(jobId) => go({ name: "trabajo", jobId })}
+        onOpenSale={(saleId) => go({ name: "venta", saleId })}
+      />
+    );
+  }
+  if (screen.name === "venta") {
+    return (
+      <Venta
+        saleId={screen.saleId}
+        onBack={back}
+        onCharge={(saleId) => go({ name: "cobrar", saleId })}
       />
     );
   }
@@ -141,6 +153,7 @@ export function ShopApp() {
         customerId={screen.customerId}
         onBack={back}
         onOpenJob={(jobId) => go({ name: "trabajo", jobId })}
+        onOpenSale={(saleId) => go({ name: "venta", saleId })}
         onCharge={(customerId) => go({ name: "cobrar", customerId })}
       />
     );

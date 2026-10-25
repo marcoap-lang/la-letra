@@ -4,6 +4,8 @@ import { balanceOf, saleBalance, useShop, type Billing, type Customer, type JobS
 import {
   BILLING_FIELDS,
   billingText,
+  canRemoveCustomer,
+  customerUse,
   cleanRfc,
   cleanZip,
   emailHint,
@@ -207,18 +209,23 @@ export function Cliente({
   customerId,
   onBack,
   onOpenJob,
+  onOpenSale,
   onCharge,
 }: {
   customerId: string;
   onBack: () => void;
   onOpenJob: (jobId: string) => void;
+  onOpenSale: (saleId: string) => void;
   onCharge: (customerId: string) => void;
 }) {
   const customer = useShop((s) => s.customers.find((item) => item.id === customerId));
   const customers = useShop((s) => s.customers);
   const jobs = useShop((s) => s.jobs);
   const sales = useShop((s) => s.sales);
+  const payments = useShop((s) => s.payments);
   const updateCustomer = useShop((s) => s.updateCustomer);
+  const deleteCustomer = useShop((s) => s.deleteCustomer);
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -352,7 +359,12 @@ export function Cliente({
             {mySales.slice(0, 5).map((sale) => {
               const left = saleBalance(sale);
               return (
-                <div key={sale.id} className="flex items-center justify-between gap-3 rounded-2xl border border-line/80 bg-card px-4 py-3 shadow-ticket">
+                <button
+                  key={sale.id}
+                  type="button"
+                  onClick={() => onOpenSale(sale.id)}
+                  className="flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-line/80 bg-card px-4 py-3 text-left shadow-ticket hover:border-stamp/40"
+                >
                   <span className="min-w-0">
                     <span className="block text-base font-semibold">{sale.lines.map((line) => `${line.qty} ${line.name}`).join(", ")}</span>
                     <span className="block text-sm text-muted">{formatDay(sale.createdAt.slice(0, 10))}</span>
@@ -360,13 +372,38 @@ export function Cliente({
                   <span className={`shrink-0 text-base tabular-nums ${left > 0 ? "font-semibold text-stamp" : "text-muted"}`}>
                     {left > 0 ? `Debe ${formatMoney(left)}` : formatMoney(sale.total)}
                   </span>
-                </div>
+                </button>
               );
             })}
             {mySales.length > 5 ? <p className="text-base text-muted">Y {mySales.length - 5} más antiguas.</p> : null}
           </div>
         </section>
       ) : null}
+
+      <section className="mt-10 border-t border-line/70 pt-5">
+        {canRemoveCustomer(customerUse(customer.id, jobs, sales, payments)) ? (
+          confirmRemove ? (
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-card p-4">
+              <p className="w-full text-lg font-semibold">¿Seguro? Se quita a {customer.name} de la lista de clientes.</p>
+              <Primary
+                tone="stamp"
+                onClick={() => {
+                  if (deleteCustomer(customer.id)) onBack();
+                }}
+              >
+                Sí, quitar
+              </Primary>
+              <Quiet onClick={() => setConfirmRemove(false)}>No</Quiet>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setConfirmRemove(true)} className="min-h-11 text-base text-stamp">
+              Quitar este cliente
+            </button>
+          )
+        ) : (
+          <p className="text-base text-muted">Tiene trabajos o ventas, primero bórrelos.</p>
+        )}
+      </section>
     </Frame>
   );
 }

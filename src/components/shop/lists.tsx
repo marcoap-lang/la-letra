@@ -11,17 +11,19 @@ export function Cobrar({
   onBack,
   onPick,
   onOpen,
+  onOpenSale,
 }: {
   customerId?: string;
   saleId?: string;
   onBack: () => void;
   onPick: (customerId: string) => void;
   onOpen: (jobId: string) => void;
+  onOpenSale: (saleId: string) => void;
 }) {
   const customers = useShop((s) => s.customers);
   const jobs = useShop((s) => s.jobs);
   const sales = useShop((s) => s.sales);
-  if (saleId) return <PagarVenta saleId={saleId} onBack={onBack} />;
+  if (saleId) return <PagarVenta saleId={saleId} onBack={onBack} onOpenSale={onOpenSale} />;
 
   const people = customers
     .map((customer) => ({
@@ -72,17 +74,19 @@ export function Cobrar({
     );
   }
 
-  return <Cobro customerId={customerId} onBack={onBack} onOpen={onOpen} />;
+  return <Cobro customerId={customerId} onBack={onBack} onOpen={onOpen} onOpenSale={onOpenSale} />;
 }
 
 function Cobro({
   customerId,
   onBack,
   onOpen,
+  onOpenSale,
 }: {
   customerId: string;
   onBack: () => void;
   onOpen: (jobId: string) => void;
+  onOpenSale: (saleId: string) => void;
 }) {
   const customer = useShop((s) => s.customers.find((item) => item.id === customerId));
   const openJobs = useShop(useShallow((s) => s.jobs.filter((job) => job.customerId === customerId && balanceOf(job) > 0)));
@@ -169,6 +173,7 @@ function Cobro({
             Registrar pago
           </Primary>
           {selectedJob ? <Quiet onClick={() => onOpen(selectedJob.id)}>Ver el trabajo</Quiet> : null}
+          {selectedSale ? <Quiet onClick={() => onOpenSale(selectedSale.id)}>Ver la venta</Quiet> : null}
         </div>
       ) : (
         <p className="mt-6 text-lg text-muted">Este cliente no debe nada.</p>
@@ -177,7 +182,7 @@ function Cobro({
   );
 }
 
-function PagarVenta({ saleId, onBack }: { saleId: string; onBack: () => void }) {
+function PagarVenta({ saleId, onBack, onOpenSale }: { saleId: string; onBack: () => void; onOpenSale: (saleId: string) => void }) {
   const sale = useShop((s) => s.sales.find((item) => item.id === saleId));
   const paySale = useShop((s) => s.paySale);
   const [amount, setAmount] = useState(sale ? String(saleBalance(sale)) : "");
@@ -222,6 +227,9 @@ function PagarVenta({ saleId, onBack }: { saleId: string; onBack: () => void }) 
       ) : (
         <p className="mt-6 text-lg">Esta papelería ya está pagada.</p>
       )}
+      <div className="mt-4">
+        <Quiet onClick={() => onOpenSale(sale.id)}>Ver la venta</Quiet>
+      </div>
     </Frame>
   );
 }

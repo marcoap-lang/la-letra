@@ -34,6 +34,7 @@ export function Home({
   onDeliver,
   onCharge,
   onChargeSale,
+  onOpenSale,
 }: {
   onNew: () => void;
   onSell: () => void;
@@ -46,6 +47,7 @@ export function Home({
   onDeliver: (jobId: string) => void;
   onCharge: (customerId: string) => void;
   onChargeSale: (saleId: string) => void;
+  onOpenSale: (saleId: string) => void;
 }) {
   const jobs = useShop((s) => s.jobs);
   const sales = useShop((s) => s.sales);
@@ -293,6 +295,13 @@ export function Home({
                 >
                   Cobrar
                 </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenSale(sale.id)}
+                  className="mt-2 min-h-12 w-full rounded-xl border border-line bg-card text-base font-semibold text-ink hover:bg-tint"
+                >
+                  Ver venta
+                </button>
               </article>
             ))}
           </Pile>
@@ -307,7 +316,7 @@ export function Home({
           >
             {papeleriaVis.map((sale) => (
               <article key={sale.id} className="rounded-2xl border border-line/80 bg-card p-4 shadow-ticket">
-                <SaleRow sale={sale} onCharge={() => onChargeSale(sale.id)} />
+                <SaleRow sale={sale} onCharge={() => onChargeSale(sale.id)} onOpen={() => onOpenSale(sale.id)} />
               </article>
             ))}
           </Pile>
@@ -377,7 +386,7 @@ export function Home({
   );
 }
 
-function SaleRow({ sale, onCharge }: { sale: Sale; onCharge: () => void }) {
+function SaleRow({ sale, onCharge, onOpen }: { sale: Sale; onCharge: () => void; onOpen: () => void }) {
   const left = saleBalance(sale);
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -392,6 +401,13 @@ function SaleRow({ sale, onCharge }: { sale: Sale; onCharge: () => void }) {
       ) : (
         <span className="text-muted tabular-nums">{formatMoney(sale.total)}</span>
       )}
+      <button
+        type="button"
+        onClick={onOpen}
+        className="min-h-12 rounded-xl border border-line bg-card px-4 text-base font-semibold text-ink hover:bg-tint"
+      >
+        Ver venta
+      </button>
     </div>
   );
 }
