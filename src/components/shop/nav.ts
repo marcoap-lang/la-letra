@@ -10,6 +10,8 @@ export type Screen =
   | { name: "tipos" }
   | { name: "papeleria" }
   | { name: "inventario"; tab?: "papeleria" | "insumos" }
+  | { name: "clientes" }
+  | { name: "cliente"; customerId: string }
   | { name: "ligar"; typeId: string }
   | { name: "elegirServicio"; supplyId: string };
 

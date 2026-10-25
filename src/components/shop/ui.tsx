@@ -7,11 +7,13 @@ export function Mark() {
 export function Frame({
   narrow = true,
   onBack,
+  backLabel = "Inicio",
   action,
   children,
 }: {
   narrow?: boolean;
   onBack?: () => void;
+  backLabel?: string;
   action?: ReactNode;
   children: ReactNode;
 }) {
@@ -34,7 +36,7 @@ export function Frame({
                 className="inline-flex min-h-12 items-center rounded-xl border border-line bg-card px-4 text-base font-semibold text-ink shadow-sm transition hover:bg-paper"
               >
                 <span aria-hidden="true" className="mr-2 text-lg">←</span>
-                Inicio
+                {backLabel}
               </button>
             ) : null}
             {action ? <div className="flex flex-wrap items-center gap-2">{action}</div> : null}

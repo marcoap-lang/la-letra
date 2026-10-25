@@ -10,6 +10,7 @@ import { Tipos } from "./tipos";
 import { Papeleria } from "./papeleria";
 import { Inventario } from "./inventario";
 import { ElegirServicio, Ligar } from "./ligar";
+import { Cliente, Clientes } from "./clientes";
 
 export function ShopApp() {
   const [stack, setStack] = useState<Screen[]>([{ name: "home" }]);
@@ -54,6 +55,7 @@ export function ShopApp() {
         onRepeat={() => go({ name: "repetir" })}
         onTypes={() => go({ name: "tipos" })}
         onInventory={(tab) => go({ name: "inventario", tab })}
+        onCustomers={() => go({ name: "clientes" })}
         onAdvance={advance}
         onDeliver={(jobId) => setStatus(jobId, "entregado")}
         onCharge={(customerId) => go({ name: "cobrar", customerId })}
@@ -122,6 +124,24 @@ export function ShopApp() {
           setNotice(`Repitiendo el pedido de ${who}. Cambie la fecha o el precio si hace falta, y guarde.`);
           go({ name: "orden" });
         }}
+      />
+    );
+  }
+  if (screen.name === "clientes") {
+    return (
+      <Clientes
+        onBack={back}
+        onOpen={(customerId) => go({ name: "cliente", customerId })}
+      />
+    );
+  }
+  if (screen.name === "cliente") {
+    return (
+      <Cliente
+        customerId={screen.customerId}
+        onBack={back}
+        onOpenJob={(jobId) => go({ name: "trabajo", jobId })}
+        onCharge={(customerId) => go({ name: "cobrar", customerId })}
       />
     );
   }
