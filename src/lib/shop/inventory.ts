@@ -287,3 +287,58 @@ export function releaseJobUse(ledger: Ledger, prev: JobUse[] | undefined, ctx: C
   }
   return cur;
 }
+
+// ---- Borrar una venta de papelería ----
+
+export type SaleForReturn = { number: number; lines: { goodId: string; qty: number; took?: number }[] };
+
+function isSaleMove(reason: string, number: number) {
+  const tag = `Venta #${number}`;
+  return reason === tag || reason.startsWith(`${tag} (`);
+}
+
+// Cuánto descontó de verdad una venta de cada artículo (nunca más de lo que se vendió).
+// Las ventas nuevas lo traen anotado en cada renglón (took). En las viejas se lee del historial de movimientos.
+export function saleReturns(sale: SaleForReturn, moves: StockMove[]): { goodId: string; qty: number }[] {
+  const byGood = new Map<string, { sold: number; noted: number; allNoted: boolean }>();
+  for (const line of sale.lines) {
+    const row = byGood.get(line.goodId) ?? { sold: 0, noted: 0, allNoted: true };
+    row.sold += Math.max(0, line.qty);
+    if (typeof line.took === "number") row.noted += Math.max(0, line.took);
+    else row.allNoted = false;
+    byGood.set(line.goodId, row);
+  }
+  const out: { goodId: string; qty: number }[] = [];
+  for (const [goodId, row] of byGood) {
+    let took = row.noted;
+    if (!row.allNoted) {
+      took = 0;
+      for (const m of moves) {
+        if (m.kind === "venta" && m.what === "good" && m.itemId === goodId && isSaleMove(m.reason, sale.number)) {
+          took += Math.max(0, -m.change);
+        }
+      }
+    }
+    const qty = round2(Math.min(took, row.sold));
+    if (qty > 0) out.push({ goodId, qty });
+  }
+  return out;
+}
+
+// Devuelve al inventario lo que la venta había descontado y lo deja anotado en el historial como ajuste.
+// Un artículo que ya no se controla no se toca.
+export function releaseSale(ledger: Ledger, sale: SaleForReturn, ctx: Ctx): Ledger {
+  let cur = ledger;
+  for (const r of saleReturns(sale, ledger.moves)) {
+    cur = applyChange(cur, {
+      what: "good",
+      id: r.goodId,
+      delta: r.qty,
+      kind: "ajuste",
+      reason: `Se borró la venta #${sale.number}, se devolvió`,
+      at: ctx.at,
+      moveId: ctx.newId(),
+    }).ledger;
+  }
+  return cur;
+}

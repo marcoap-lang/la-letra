@@ -144,3 +144,24 @@ export function statsByCustomer(
   for (const s of map.values()) s.owed = Math.round(s.owed * 100) / 100;
   return map;
 }
+
+export type CustomerUse = { jobs: number; sales: number; payments: number };
+
+/** Qué tiene ligado un cliente. Los pagos de un trabajo que ya se borró no cuentan: son restos sin dueño. */
+export function customerUse(
+  customerId: string,
+  jobs: { id: string; customerId: string }[],
+  sales: { customerId: string | null }[],
+  payments: { jobId: string; customerId: string }[],
+): CustomerUse {
+  const jobIds = new Set(jobs.map((job) => job.id));
+  return {
+    jobs: jobs.filter((job) => job.customerId === customerId).length,
+    sales: sales.filter((sale) => sale.customerId === customerId).length,
+    payments: payments.filter((p) => p.customerId === customerId && jobIds.has(p.jobId)).length,
+  };
+}
+
+export function canRemoveCustomer(use: CustomerUse) {
+  return use.jobs === 0 && use.sales === 0 && use.payments === 0;
+}

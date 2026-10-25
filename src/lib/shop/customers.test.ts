@@ -88,3 +88,17 @@ test("conteo de trabajos, ventas y saldo", () => {
   assert.deepEqual(stats.get("3"), { jobs: 0, sales: 1, owed: 0 });
   assert.equal(stats.get("2"), undefined);
 });
+
+import { canRemoveCustomer, customerUse } from "./customers.ts";
+
+test("cliente sin nada ligado se puede quitar; con trabajos, ventas o pagos de un trabajo vivo no", () => {
+  const jobs = [{ id: "j1", customerId: "a" }];
+  const sales = [{ customerId: "b" }, { customerId: null }];
+  const payments = [{ jobId: "j1", customerId: "a" }, { jobId: "borrado", customerId: "c" }];
+  assert.deepEqual(customerUse("a", jobs, sales, payments), { jobs: 1, sales: 0, payments: 1 });
+  assert.equal(canRemoveCustomer(customerUse("a", jobs, sales, payments)), false);
+  assert.equal(canRemoveCustomer(customerUse("b", jobs, sales, payments)), false);
+  assert.equal(canRemoveCustomer(customerUse("z", jobs, sales, payments)), true);
+  // pago huérfano (su trabajo ya no existe): no bloquea
+  assert.equal(canRemoveCustomer(customerUse("c", jobs, sales, payments)), true);
+});

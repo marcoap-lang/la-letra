@@ -105,3 +105,46 @@ test("avisos: solo en o debajo del mínimo, agotados primero, nada si todo está
   assert.equal(stockState(5, 0), "ok");
   assert.equal(stockState(0, 0), "agotado");
 });
+
+import { releaseSale, saleReturns } from "./inventory.ts";
+
+test("borrar venta: devuelve justo lo que se descontó, sin inflar", () => {
+  // Se vendieron 15 pero solo había 10: descontó 10, faltaron 5.
+  let l = base();
+  const r = applyChange(l, { what: "good", id: "pluma", delta: -15, kind: "venta", reason: "Venta #7", at, moveId: newId() });
+  l = r.ledger;
+  assert.equal(l.goods[0].stock, 0);
+  const sale = { number: 7, lines: [{ goodId: "pluma", qty: 15, took: -r.applied }] };
+  assert.deepEqual(saleReturns(sale, l.moves), [{ goodId: "pluma", qty: 10 }]);
+  const back = releaseSale(l, sale, ctx);
+  assert.equal(back.goods[0].stock, 10); // no 15
+  assert.equal(back.moves[0].kind, "ajuste");
+  assert.equal(back.moves[0].change, 10);
+  assert.equal(back.moves[0].reason, "Se borró la venta #7, se devolvió");
+});
+
+test("borrar venta vieja (sin took): se lee del historial; sin historial no devuelve nada", () => {
+  let l = base();
+  l = applyChange(l, { what: "good", id: "pluma", delta: -3, kind: "venta", reason: "Venta #8", at, moveId: newId() }).ledger;
+  l = applyChange(l, { what: "good", id: "pluma", delta: -2, kind: "venta", reason: "Venta #80", at, moveId: newId() }).ledger; // otra venta
+  const old = { number: 8, lines: [{ goodId: "pluma", qty: 3 }] };
+  assert.deepEqual(saleReturns(old, l.moves), [{ goodId: "pluma", qty: 3 }]);
+  assert.equal(releaseSale(l, old, ctx).goods[0].stock, 8); // 10-3-2+3
+  const sinRastro = { number: 99, lines: [{ goodId: "pluma", qty: 3 }] };
+  assert.deepEqual(saleReturns(sinRastro, l.moves), []);
+  assert.equal(releaseSale(l, sinRastro, ctx), l);
+});
+
+test("borrar venta: artículo que ya no se controla o que nunca se controló no se toca", () => {
+  const l = base();
+  const sale = { number: 9, lines: [{ goodId: "lapiz", qty: 2, took: 0 }, { goodId: "pluma", qty: 2, took: 2 }] };
+  const back = releaseSale(l, sale, ctx);
+  assert.equal(back.goods[1].stock, undefined);
+  assert.equal(back.goods[0].stock, 12);
+  assert.equal(back.moves.length, 1);
+});
+
+test("borrar venta: dos renglones del mismo artículo suman y no pasan de lo vendido", () => {
+  const sale = { number: 5, lines: [{ goodId: "pluma", qty: 2, took: 2 }, { goodId: "pluma", qty: 1, took: 5 }] };
+  assert.deepEqual(saleReturns(sale, []), [{ goodId: "pluma", qty: 3 }]);
+});

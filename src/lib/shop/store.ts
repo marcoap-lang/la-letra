@@ -2,13 +2,14 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { SEED_DRAWERS, SEED_TYPES, type Drawer, type JobType, type SupplyUse } from "./catalog";
 import { digits, norm, roundMoney } from "./format";
-import { findDuplicate, normalizeBilling, normalizeCustomer, type Billing, type Customer } from "./customers";
+import { canRemoveCustomer, customerUse, findDuplicate, normalizeBilling, normalizeCustomer, type Billing, type Customer } from "./customers";
 import { SEED_GOODS, type Good, type GoodCategory } from "./goods";
 import {
   applyAdjust,
   applyChange,
   applyJobUse,
   releaseJobUse,
+  releaseSale,
   round2,
   trimMoves,
   type JobUse,
@@ -52,6 +53,8 @@ export type SaleLine = {
   name: string;
   qty: number;
   price: number;
+  // Cuánto se descontó de verdad del inventario al vender (si el artículo se controla).
+  took?: number;
 };
 
 export type Sale = {
@@ -129,6 +132,8 @@ type ShopState = Snapshot & {
   addCustomer: (name: string, phone: string) => string;
   updateCustomer: (id: string, patch: { name?: string; phone?: string; billing?: Billing }) => void;
   deleteJob: (jobId: string) => void;
+  deleteSale: (saleId: string) => boolean;
+  deleteCustomer: (id: string) => boolean;
   replaceAll: (snap: Snapshot) => void;
 };
 
@@ -507,29 +512,34 @@ export const useShop = create<ShopState>()(
         } else {
           customerId = null;
         }
-        const sale: Sale = {
-          id: uid(),
-          number: state.nextNumber,
-          customerId,
-          customerName: name || "Mostrador",
-          lines,
-          total,
-          paid,
-          createdAt: now(),
-        };
+        const number = state.nextNumber;
+        const stamp = now();
         // Cada artículo con existencia registrada baja; los demás no se controlan.
+        // Se anota cuánto bajó de verdad, para devolver justo eso si la venta se borra.
         let ledger = ledgerOf(state);
-        for (const line of lines) {
-          ledger = applyChange(ledger, {
+        const soldLines = lines.map((line) => {
+          const r = applyChange(ledger, {
             what: "good",
             id: line.goodId,
             delta: -line.qty,
             kind: "venta",
-            reason: `Venta #${sale.number}`,
-            at: sale.createdAt,
+            reason: `Venta #${number}`,
+            at: stamp,
             moveId: uid(),
-          }).ledger;
-        }
+          });
+          ledger = r.ledger;
+          return { ...line, took: round2(Math.max(0, -r.applied)) };
+        });
+        const sale: Sale = {
+          id: uid(),
+          number,
+          customerId,
+          customerName: name || "Mostrador",
+          lines: soldLines,
+          total,
+          paid,
+          createdAt: stamp,
+        };
         set({
           customers,
           sales: [sale, ...state.sales],
@@ -644,10 +654,36 @@ export const useShop = create<ShopState>()(
           });
           return {
             jobs: state.jobs.filter((job) => job.id !== jobId),
+            payments: state.payments.filter((payment) => payment.jobId !== jobId),
             supplies: ledger.supplies,
             moves: ledger.moves,
           };
         }),
+      deleteSale: (saleId) => {
+        const found = get().sales.find((sale) => sale.id === saleId);
+        if (!found) return false;
+        set((state) => {
+          // Se devuelve al inventario lo que la venta había descontado; el historial lo deja anotado.
+          const ledger = releaseSale(ledgerOf(state), found, { label: `Venta #${found.number}`, at: now(), newId: uid });
+          return {
+            sales: state.sales.filter((sale) => sale.id !== saleId),
+            goods: ledger.goods,
+            moves: ledger.moves,
+          };
+        });
+        return true;
+      },
+      deleteCustomer: (id) => {
+        const state = get();
+        if (!state.customers.some((customer) => customer.id === id)) return false;
+        if (!canRemoveCustomer(customerUse(id, state.jobs, state.sales, state.payments))) return false;
+        set({
+          customers: state.customers.filter((customer) => customer.id !== id),
+          // Pagos sueltos de trabajos que ya no existen: se van con el cliente.
+          payments: state.payments.filter((payment) => payment.customerId !== id),
+        });
+        return true;
+      },
       replaceAll: (snap) =>
         set({
           version: 2,
