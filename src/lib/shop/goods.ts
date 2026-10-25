@@ -1,5 +1,16 @@
 export type GoodCategory = "Escritura" | "Papel y archivo" | "Útiles" | "Servicios rápidos" | "Otros";
-export type Good = { id: string; name: string; price: number; hidden: boolean; category?: GoodCategory };
+// stock = cuántos hay (si no existe, el artículo no se controla). min = avisar cuando queden esos o menos.
+// review = una venta pidió más de lo que había: se dejó en 0 y conviene contar.
+export type Good = {
+  id: string;
+  name: string;
+  price: number;
+  hidden: boolean;
+  category?: GoodCategory;
+  stock?: number;
+  min?: number;
+  review?: boolean;
+};
 // Los artículos inician sin precio: el negocio lo captura una sola vez.
 // Los IDs anteriores permanecen para conservar los datos existentes.
 const items: [string, string, GoodCategory][] = [

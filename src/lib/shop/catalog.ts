@@ -1,11 +1,15 @@
 export type Drawer = { id: string; name: string };
 
+// Insumo que gasta un tipo de trabajo. by "pieza": per x cantidad del trabajo; by "trabajo": per una sola vez.
+export type SupplyUse = { supplyId: string; per: number; by: "pieza" | "trabajo" };
+
 export type JobType = {
   id: string;
   drawerId: string;
   name: string;
   needsProof: boolean;
   hidden: boolean;
+  uses?: SupplyUse[];
 };
 
 export const SEED_DRAWERS: Drawer[] = [

@@ -1,10 +1,22 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { SEED_DRAWERS, SEED_TYPES, type Drawer, type JobType } from "./catalog";
+import { SEED_DRAWERS, SEED_TYPES, type Drawer, type JobType, type SupplyUse } from "./catalog";
 import { digits, norm, roundMoney } from "./format";
 import { SEED_GOODS, type Good, type GoodCategory } from "./goods";
+import {
+  applyAdjust,
+  applyChange,
+  applyJobUse,
+  releaseJobUse,
+  round2,
+  trimMoves,
+  type JobUse,
+  type Ledger,
+  type StockMove,
+  type Supply,
+} from "./inventory";
 
-export type { Drawer, JobType, Good, GoodCategory };
+export type { Drawer, JobType, Good, GoodCategory, SupplyUse, Supply, StockMove, JobUse };
 
 export type JobStatus = "nuevo" | "aprobado" | "listo" | "entregado";
 
@@ -25,6 +37,7 @@ export type Job = {
   status: JobStatus;
   createdAt: string;
   updatedAt: string;
+  used?: JobUse[];
 };
 
 export type Payment = {
@@ -63,6 +76,8 @@ export type Snapshot = {
   nextNumber: number;
   goods?: Good[];
   sales?: Sale[];
+  supplies?: Supply[];
+  moves?: StockMove[];
 };
 
 export type NewJobInput = {
@@ -88,6 +103,14 @@ export type NewSaleInput = {
 type ShopState = Snapshot & {
   goods: Good[];
   sales: Sale[];
+  supplies: Supply[];
+  moves: StockMove[];
+  addSupply: (input: { name: string; unit: string; qty: number; min: number }) => string;
+  hideSupply: (id: string) => void;
+  receiveStock: (what: "good" | "supply", id: string, amount: number) => void;
+  adjustStock: (what: "good" | "supply", id: string, qty: number, min?: number) => void;
+  stopControlGood: (id: string) => void;
+  setTypeUses: (typeId: string, uses: SupplyUse[]) => void;
   addDrawer: (name: string) => string;
   addType: (input: { drawerId: string; name: string; needsProof: boolean }) => string;
   setTypeHidden: (id: string, hidden: boolean) => void;
@@ -142,7 +165,13 @@ export function toSnapshot(state: Snapshot): Snapshot {
     nextNumber: state.nextNumber,
     goods: state.goods ?? SEED_GOODS,
     sales: state.sales ?? [],
+    supplies: state.supplies ?? [],
+    moves: state.moves ?? [],
   };
+}
+
+function ledgerOf(state: Pick<ShopState, "goods" | "supplies" | "moves">): Ledger {
+  return { goods: state.goods, supplies: state.supplies, moves: state.moves };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -165,6 +194,8 @@ export function parseSnapshot(value: unknown): Snapshot | null {
   if (!jobsOk) return null;
   const goods = Array.isArray(value.goods) ? (value.goods as Good[]) : SEED_GOODS;
   const sales = Array.isArray(value.sales) ? (value.sales as Sale[]) : [];
+  const supplies = Array.isArray(value.supplies) ? (value.supplies as Supply[]) : [];
+  const moves = Array.isArray(value.moves) ? (value.moves as StockMove[]) : [];
   return {
     version: 2,
     drawers: value.drawers as Drawer[],
@@ -175,6 +206,8 @@ export function parseSnapshot(value: unknown): Snapshot | null {
     nextNumber: value.nextNumber,
     goods,
     sales,
+    supplies,
+    moves,
   };
 }
 
@@ -199,6 +232,8 @@ export const useShop = create<ShopState>()(
       payments: [],
       goods: SEED_GOODS,
       sales: [],
+      supplies: [],
+      moves: [],
       nextNumber: 1001,
       addDrawer: (name) => {
         const clean = name.trim();
@@ -273,6 +308,94 @@ export const useShop = create<ShopState>()(
         set((state) => ({
           goods: state.goods.map((good) => (good.id === id ? { ...good, hidden } : good)),
         })),
+      addSupply: (input) => {
+        const clean = input.name.trim();
+        const state = get();
+        const found = state.supplies.find((item) => norm(item.name) === norm(clean));
+        const qty = Math.max(0, round2(input.qty));
+        const min = Math.max(0, round2(input.min));
+        if (found) {
+          set((st) => ({
+            supplies: st.supplies.map((item) =>
+              item.id === found.id ? { ...item, hidden: false, unit: input.unit || item.unit } : item,
+            ),
+          }));
+          if (qty > 0) get().adjustStock("supply", found.id, qty, min);
+          return found.id;
+        }
+        const id = uid();
+        set((st) => ({
+          supplies: [...st.supplies, { id, name: clean, unit: input.unit, qty: 0, min }],
+        }));
+        if (qty > 0) get().adjustStock("supply", id, qty, min);
+        return id;
+      },
+      hideSupply: (id) =>
+        set((state) => ({
+          supplies: state.supplies.map((item) => (item.id === id ? { ...item, hidden: true } : item)),
+        })),
+      receiveStock: (what, id, amount) => {
+        const n = round2(amount);
+        if (n <= 0) return;
+        const r = applyChange(ledgerOf(get()), {
+          what,
+          id,
+          delta: n,
+          kind: "entrada",
+          reason: "Llegó mercancía",
+          at: now(),
+          moveId: uid(),
+          clearReview: true,
+        });
+        set({ goods: r.ledger.goods, supplies: r.ledger.supplies, moves: r.ledger.moves });
+      },
+      adjustStock: (what, id, qty, min) => {
+        const next = applyAdjust(ledgerOf(get()), {
+          what,
+          id,
+          qty,
+          min,
+          reason: "Se puso la cantidad real",
+          at: now(),
+          moveId: uid(),
+        });
+        set({ goods: next.goods, supplies: next.supplies, moves: next.moves });
+      },
+      stopControlGood: (id) =>
+        set((state) => ({
+          goods: state.goods.map((good) => {
+            if (good.id !== id) return good;
+            const { stock: _s, min: _m, review: _r, ...rest } = good;
+            return rest;
+          }),
+          moves: trimMoves([
+            {
+              id: uid(),
+              at: now(),
+              kind: "ajuste" as const,
+              what: "good" as const,
+              itemId: id,
+              itemName: state.goods.find((good) => good.id === id)?.name ?? "",
+              change: 0,
+              after: 0,
+              reason: "Se dejó de controlar la existencia",
+            },
+            ...state.moves,
+          ]),
+        })),
+      setTypeUses: (typeId, uses) =>
+        set((state) => ({
+          types: state.types.map((type) =>
+            type.id === typeId
+              ? {
+                  ...type,
+                  uses: uses
+                    .filter((use) => use.per > 0)
+                    .map((use) => ({ supplyId: use.supplyId, per: round2(use.per), by: use.by })),
+                }
+              : type,
+          ),
+        })),
       saveJob: (input) => {
         const state = get();
         let customerId = input.customerId;
@@ -326,11 +449,20 @@ export const useShop = create<ShopState>()(
           paid > 0
             ? [...state.payments, { id: uid(), jobId, customerId, amount: paid, at: stamp }]
             : state.payments;
+        // Los insumos del tipo de trabajo se descuentan una sola vez, al guardar.
+        const spent = applyJobUse(ledgerOf(state), undefined, type?.uses, job.quantity, {
+          label: `Trabajo #${job.number} (${job.typeName})`,
+          at: stamp,
+          newId: uid,
+        });
+        const withUse: Job = spent.used.length > 0 ? { ...job, used: spent.used } : job;
         set({
           customers,
-          jobs: [job, ...state.jobs],
+          jobs: [withUse, ...state.jobs],
           payments,
           nextNumber: state.nextNumber + 1,
+          supplies: spent.ledger.supplies,
+          moves: spent.ledger.moves,
         });
         return jobId;
       },
@@ -385,10 +517,25 @@ export const useShop = create<ShopState>()(
           paid,
           createdAt: now(),
         };
+        // Cada artículo con existencia registrada baja; los demás no se controlan.
+        let ledger = ledgerOf(state);
+        for (const line of lines) {
+          ledger = applyChange(ledger, {
+            what: "good",
+            id: line.goodId,
+            delta: -line.qty,
+            kind: "venta",
+            reason: `Venta #${sale.number}`,
+            at: sale.createdAt,
+            moveId: uid(),
+          }).ledger;
+        }
         set({
           customers,
           sales: [sale, ...state.sales],
           nextNumber: state.nextNumber + 1,
+          goods: ledger.goods,
+          moves: ledger.moves,
         });
         return sale.id;
       },
@@ -432,23 +579,35 @@ export const useShop = create<ShopState>()(
         return applied;
       },
       updateJob: (jobId, patch) =>
-        set((state) => ({
-          jobs: state.jobs.map((job) => {
-            if (job.id !== jobId) return job;
-            const price = patch.price === undefined ? job.price : roundMoney(Math.max(0, patch.price));
-            const paid =
-              patch.paid === undefined ? job.paid : roundMoney(Math.max(0, Math.min(patch.paid, price)));
-            return {
-              ...job,
-              ...patch,
-              price,
-              paid,
-              quantity:
-                patch.quantity === undefined ? job.quantity : Math.max(1, Math.round(patch.quantity) || 1),
-              updatedAt: now(),
-            };
-          }),
-        })),
+        set((state) => {
+          const found = state.jobs.find((job) => job.id === jobId);
+          if (!found) return state;
+          const price = patch.price === undefined ? found.price : roundMoney(Math.max(0, patch.price));
+          const paid =
+            patch.paid === undefined ? found.paid : roundMoney(Math.max(0, Math.min(patch.paid, price)));
+          const quantity =
+            patch.quantity === undefined ? found.quantity : Math.max(1, Math.round(patch.quantity) || 1);
+          const stamp = now();
+          let updated: Job = { ...found, ...patch, price, paid, quantity, updatedAt: stamp };
+          let ledger = ledgerOf(state);
+          // Si cambió la cantidad, solo se mueve la diferencia de insumos (nunca se descuenta doble).
+          if (found.used && found.used.length > 0 && quantity !== found.quantity) {
+            const spent = applyJobUse(
+              ledger,
+              found.used,
+              found.used.map((u) => ({ supplyId: u.supplyId, per: u.per, by: u.by })),
+              quantity,
+              { label: `Trabajo #${found.number} (${found.typeName})`, at: stamp, newId: uid },
+            );
+            ledger = spent.ledger;
+            updated = { ...updated, used: spent.used };
+          }
+          return {
+            jobs: state.jobs.map((job) => (job.id === jobId ? updated : job)),
+            supplies: ledger.supplies,
+            moves: ledger.moves,
+          };
+        }),
       updateCustomer: (id, patch) =>
         set((state) => ({
           customers: state.customers.map((customer) =>
@@ -461,7 +620,22 @@ export const useShop = create<ShopState>()(
               : customer,
           ),
         })),
-      deleteJob: (jobId) => set((state) => ({ jobs: state.jobs.filter((job) => job.id !== jobId) })),
+      deleteJob: (jobId) =>
+        set((state) => {
+          const found = state.jobs.find((job) => job.id === jobId);
+          if (!found) return state;
+          // Se devuelve al inventario lo que el trabajo había gastado; el historial lo deja anotado.
+          const ledger = releaseJobUse(ledgerOf(state), found.used, {
+            label: `Trabajo #${found.number} (${found.typeName})`,
+            at: now(),
+            newId: uid,
+          });
+          return {
+            jobs: state.jobs.filter((job) => job.id !== jobId),
+            supplies: ledger.supplies,
+            moves: ledger.moves,
+          };
+        }),
       replaceAll: (snap) =>
         set({
           version: 2,
@@ -472,6 +646,8 @@ export const useShop = create<ShopState>()(
           payments: snap.payments,
           goods: snap.goods ?? SEED_GOODS,
           sales: snap.sales ?? [],
+          supplies: snap.supplies ?? [],
+          moves: snap.moves ?? [],
           nextNumber: snap.nextNumber,
         }),
     }),
@@ -494,6 +670,8 @@ export const useShop = create<ShopState>()(
             ];
           })(),
           sales: Array.isArray(saved.sales) ? saved.sales : [],
+          supplies: Array.isArray(saved.supplies) ? saved.supplies : [],
+          moves: Array.isArray(saved.moves) ? saved.moves : [],
         };
       },
     },
