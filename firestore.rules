@@ -7,7 +7,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function allowedEmails() {
-      return ['marcoap@gmail.com', 'imprentalaletra2@gmail.com'];
+      return ['marcoap@gmail.com', 'imprentalaletra1@gmail.com', 'imprentalaletra2@gmail.com'];
     }
 
     function isAllowedUser() {
