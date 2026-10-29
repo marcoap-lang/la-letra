@@ -1,7 +1,8 @@
 import { Children, useRef, useState, type ReactNode } from "react";
-import { ShoppingBag, ClipboardPlus, Search, Clock3, CircleCheck, Wallet, ReceiptText, ArrowRight, Repeat2, ListPlus, Boxes, TriangleAlert, Users, ChartNoAxesColumn } from "lucide-react";
+import { ShoppingBag, ClipboardPlus, Search, Clock3, CircleCheck, Wallet, ReceiptText, ArrowRight, Repeat2, ListPlus, Boxes, TriangleAlert, Users, ChartNoAxesColumn, Download } from "lucide-react";
 import { balanceOf, downloadSnapshot, parseSnapshot, saleBalance, toSnapshot, useShop, type Job, type Sale } from "@/lib/shop/store";
 import { formatDay, formatMoney, norm, todayISO } from "@/lib/shop/format";
+import { useInstallApp } from "@/lib/pwa";
 import { useSyncStatus } from "@/lib/shop/sync-status";
 import { alertsOf, qtyText } from "@/lib/shop/inventory";
 import { Frame, Primary, Quiet } from "./ui";
@@ -58,6 +59,7 @@ export function Home({
   const supplies = useShop((s) => s.supplies);
   const replaceAll = useShop((s) => s.replaceAll);
   const fileRef = useRef<HTMLInputElement>(null);
+  const installApp = useInstallApp();
   const [copyNote, setCopyNote] = useState("");
   const [pending, setPending] = useState<string | null>(null);
   const [place, setPlace] = useState<Place>("pendientes");
@@ -301,6 +303,7 @@ export function Home({
           <Quiet onClick={onStats}><ChartNoAxesColumn size={19} className="mr-2"/> Estadísticas</Quiet>
           <Quiet onClick={onRepeat}><Repeat2 size={19} className="mr-2"/> Repetir pedido</Quiet>
           <Quiet onClick={onTypes}><ListPlus size={19} className="mr-2"/> Servicios de imprenta</Quiet>
+          {installApp.canInstall ? <Quiet onClick={installApp.install}><Download size={19} className="mr-2"/> Instalar La Letra como app</Quiet> : null}
         </div>
         {admin ? (
           <div className="mt-5 border-t border-dashed border-line pt-4">
